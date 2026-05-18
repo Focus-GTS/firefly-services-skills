@@ -1,0 +1,18 @@
+{
+  "name": "firefly-services-skills",
+  "description": "FocusGTS-built Claude Code skills for Adobe Firefly Services — production patterns from real enterprise FDE engagements.",
+  "version": "1.0.0",
+  "owner": {
+    "name": "FocusGTS",
+    "url": "https://focusgts.com"
+  },
+  "plugins": [
+    {
+      "name": "firefly-services",
+      "source": "./plugins/firefly-services",
+      "description": "13 skills covering Firefly Services auth, generation, custom models, expand/fill, video, Photoshop API, and Lightroom API."
+    }
+  ],
+  "license": "Apache-2.0",
+  "repository": "https://github.com/focusgts/firefly-services-skills"
+}

@@ -1,0 +1,18 @@
+{
+  "name": "@focusgts/firefly-services-skills",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Skills for Adobe Firefly Services, built by FocusGTS from real FDE engagements.",
+  "scripts": {
+    "validate": "find plugins -name SKILL.md -exec dirname {} \\; | xargs -I {} skills-ref validate {}"
+  },
+  "devDependencies": {
+    "skills-ref": "^0.1.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/focusgts/firefly-services-skills.git"
+  },
+  "license": "Apache-2.0"
+}

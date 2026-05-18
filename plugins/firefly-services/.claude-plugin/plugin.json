@@ -1,0 +1,23 @@
+{
+  "name": "firefly-services",
+  "description": "Production-grade skills for Adobe Firefly Services — credentials and IMS auth, image and video generation (V3 async), custom models, generative expand and fill, Photoshop and Lightroom API integration, rate-limit and storage-ref playbooks. Built by FocusGTS from real enterprise FDE work.",
+  "version": "1.0.0",
+  "author": {
+    "name": "FocusGTS",
+    "url": "https://focusgts.com"
+  },
+  "repository": "https://github.com/focusgts/firefly-services-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "adobe",
+    "firefly",
+    "firefly-services",
+    "photoshop-api",
+    "lightroom-api",
+    "generative-ai",
+    "ims",
+    "custom-models",
+    "fde",
+    "focusgts"
+  ]
+}

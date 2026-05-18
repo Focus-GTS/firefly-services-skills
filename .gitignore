@@ -1,0 +1,23 @@
+# Node
+node_modules/
+package-lock.json
+
+# Local data / caches
+.claude-flow/
+*.db
+*.rvf
+*.rvf.lock
+
+# Env / secrets
+.env
+.env.*
+*.secret
+
+# Editor
+.DS_Store
+.vscode/
+.idea/
+
+# Test artifacts
+coverage/
+.nyc_output/
