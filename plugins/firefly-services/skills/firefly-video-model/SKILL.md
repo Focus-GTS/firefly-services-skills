@@ -2,7 +2,7 @@
 name: firefly-video-model
 description: Generate video clips with Adobe Firefly Video Model — text-to-video and image-to-video, prompt patterns optimized for motion vs. coherence, duration and aspect ratio control, IP-safe commercial use posture, and the production workflow for inserting Firefly video into existing edit pipelines. Use whenever the user mentions "Firefly Video", "generate video", "text-to-video", "image-to-video", "motion graphics", "video clip", "video model", or wants to add Firefly-generated motion to a campaign or content workflow. The first commercially-safe AI video generation API; encodes the prompt engineering and integration patterns for production motion-graphics workflows.
 license: Apache-2.0
-compatibility: Requires `ff_apis` scope and Firefly Video entitlement (often a separate SKU from base Firefly Services). Endpoint: `firefly-api.adobe.io/v3/videos/generate-async`. Output is video file (typically MP4, 1080p). Generation can take 2-10 minutes per clip.
+compatibility: Requires `ff_apis` scope and Firefly Video entitlement (often a separate SKU from base Firefly Services). Endpoint: `firefly-api.adobe.io/v3/videos/generate`. Output is video file (typically MP4, 1080p). Generation can take 2-10 minutes per clip.
 allowed-tools: Bash(curl:*) Bash(jq:*) Read Write Edit
 metadata:
   version: "1.0.0"
@@ -49,7 +49,7 @@ If the use case needs long-form, multi-shot, or character lip-sync, plan to use 
 ## Step 1 — Submit the Video Generation Job
 
 ```bash
-curl --silent -X POST 'https://firefly-api.adobe.io/v3/videos/generate-async' \
+curl --silent -X POST 'https://firefly-api.adobe.io/v3/videos/generate' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-Api-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \

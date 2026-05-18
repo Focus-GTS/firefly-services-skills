@@ -1,8 +1,8 @@
 ---
 name: lightroom-api-batch
-description: Batch image processing with Adobe Lightroom API — preset application, auto-tone, auto-straighten, exposure/highlight/shadow/color adjustments, color grading, and batch normalization across an image set. Use whenever the user wants "Lightroom API", "batch photo processing", "apply preset", "auto-tone images", "color grade", "normalize a photo set", "lr.adobe.io", "Camera Raw filter", or needs to apply consistent processing to many images at scale. Encodes the pattern for delivering visually cohesive image sets from mixed-source raw input — the workhorse pipeline for any photo-heavy creative workflow.
+description: Batch image processing with Adobe Lightroom API — preset application, auto-tone, auto-straighten, exposure/highlight/shadow/color adjustments, color grading, and batch normalization across an image set. Use whenever the user wants "Lightroom API", "batch photo processing", "apply preset", "auto-tone images", "color grade", "normalize a photo set", "image.adobe.io", "Camera Raw filter", or needs to apply consistent processing to many images at scale. Encodes the pattern for delivering visually cohesive image sets from mixed-source raw input — the workhorse pipeline for any photo-heavy creative workflow.
 license: Apache-2.0
-compatibility: Requires `creative_sdk` scope. Endpoint base: `lr.adobe.io/v2/*`. Inputs accept JPEG, PNG, TIFF, and raw formats (.dng, .cr2, .nef, .arw). Outputs JPEG/PNG/TIFF/DNG. Async with job polling.
+compatibility: Requires `creative_sdk` scope. Endpoint base: `image.adobe.io/v2/*`. Inputs accept JPEG, PNG, TIFF, and raw formats (.dng, .cr2, .nef, .arw). Outputs JPEG/PNG/TIFF/DNG. Async with job polling.
 allowed-tools: Bash(curl:*) Bash(jq:*) Read Write Edit
 metadata:
   version: "1.0.0"
@@ -20,7 +20,7 @@ Use this skill when:
 - Mixed-source images (different cameras, lighting conditions) need normalization
 - A specific look or preset must be applied consistently
 - Raw files (DNG, CR2, NEF, ARW) need processing before downstream use
-- The user mentions Lightroom API, presets, auto-tone, batch color grading, or `lr.adobe.io`
+- The user mentions Lightroom API, presets, auto-tone, batch color grading, or `image.adobe.io`
 
 Do **NOT** use this skill when:
 - The transformation is structural (layers, smart objects, compositing) — use Photoshop API
@@ -44,7 +44,7 @@ A typical batch pipeline combines all three: auto-tone for baseline normalizatio
 Lightroom presets are `.xmp` files containing the develop settings. They are produced in desktop Lightroom and exported.
 
 ```bash
-curl --silent -X POST 'https://lr.adobe.io/v2/presets/apply' \
+curl --silent -X POST 'https://image.adobe.io/lrService/presets' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-API-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \
@@ -73,7 +73,7 @@ Response includes a status URL to poll. Same pattern as Photoshop API.
 For "make these look consistent" without a specific preset, auto-tone is the right starting point:
 
 ```bash
-curl --silent -X POST 'https://lr.adobe.io/v2/autoTone' \
+curl --silent -X POST 'https://image.adobe.io/lrService/autoTone' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-API-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \
@@ -90,7 +90,7 @@ Auto-tone analyzes the image and applies exposure, highlights, shadows, whites, 
 For shot-specific tuning:
 
 ```bash
-curl --silent -X POST 'https://lr.adobe.io/v2/adjustments' \
+curl --silent -X POST 'https://image.adobe.io/lrService/edit' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-API-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \
@@ -174,7 +174,7 @@ This produces a set of images that read as consistently processed. The exact rec
 Lightroom API ingests raw formats directly:
 
 ```bash
-curl --silent -X POST 'https://lr.adobe.io/v2/autoTone' \
+curl --silent -X POST 'https://image.adobe.io/lrService/autoTone' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-API-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \

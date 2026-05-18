@@ -17,7 +17,7 @@ The production pattern for text-to-image generation with Adobe Firefly's V3 asyn
 
 Use this skill when:
 - Generating images from text prompts at any production volume
-- Migrating from V2 sync (`/v2/images/generate`) to V3 async (`/v3/images/generate-async`)
+- Migrating from V2 sync (`/v2/images/generate`) to V3 async (`/v3/images/generate`)
 - Building a campaign pipeline, banner-at-scale system, or batch generator
 - Adding style or structure references to a generate call
 - Designing a webhook-based generation pipeline
@@ -29,7 +29,7 @@ Do **NOT** use this skill when:
 
 ## Sync vs Async — When to Use Which
 
-| Property | V2 sync (`/v2/images/generate`) | V3 async (`/v3/images/generate-async`) |
+| Property | V2 sync (`/v2/images/generate`) | V3 async (`/v3/images/generate`) |
 |---|---|---|
 | Latency to first byte | 10-30s (blocking) | ~200ms (returns jobId) |
 | Time to result | Same | Same |
@@ -44,7 +44,7 @@ Do **NOT** use this skill when:
 ## The Async Workflow
 
 ```
-1. POST /v3/images/generate-async  →  { jobId, statusUrl, cancelUrl }
+1. POST /v3/images/generate  →  { jobId, statusUrl, cancelUrl }
 2. Either:
    a. Poll statusUrl every 1-2s until status === "succeeded" | "failed"
    b. OR provide a webhook callback URL — Firefly calls it on completion
@@ -57,7 +57,7 @@ Do **NOT** use this skill when:
 Minimum required request:
 
 ```bash
-curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/generate-async' \
+curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/generate' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-Api-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \
@@ -307,7 +307,7 @@ For interactive one-shot use, submit + poll in a single function. Acceptable for
 
 ### Pattern: Queue-fronted batch
 
-For >50 calls, use the SQS / Lambda / Token-Bucket pattern from `firefly-services-rate-limits`. Each queue message is one `generate-async` call. Worker submits, polls (or relies on webhook), persists result.
+For >50 calls, use the SQS / Lambda / Token-Bucket pattern from `firefly-services-rate-limits`. Each queue message is one generate call. Worker submits, polls (or relies on webhook), persists result.
 
 ### Pattern: Multi-variation A/B funnel
 

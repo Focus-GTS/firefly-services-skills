@@ -2,7 +2,7 @@
 name: firefly-services-troubleshoot
 description: Diagnose and resolve Firefly Services error responses — 401 Unauthorized, 403 Forbidden, 429 Too Many Requests, 5xx, malformed prompts, asset-storage failures, region mismatches, and silent product-profile gates. Use whenever an API call returns a non-2xx response, the user says "Firefly is broken", "I'm getting a 401", "rate limited", "this used to work", "Firefly Services error", "InvalidStorageReference", "ContentValidationError", or pastes a Firefly error body. Returns a triage tree and the specific fix for the most common 30+ failure modes our consultants hit in production at enterprise customers.
 license: Apache-2.0
-compatibility: Requires a Firefly Services credential pair (`FIREFLY_SERVICES_CLIENT_ID`, `FIREFLY_SERVICES_CLIENT_SECRET`) and `curl` for verification round-trips. Works against `firefly-api.adobe.io`, `pscx.adobe.io`, `lr.adobe.io`.
+compatibility: Requires a Firefly Services credential pair (`FIREFLY_SERVICES_CLIENT_ID`, `FIREFLY_SERVICES_CLIENT_SECRET`) and `curl` for verification round-trips. Works against `firefly-api.adobe.io` (Firefly) and `image.adobe.io` (Photoshop API, Lightroom API).
 allowed-tools: Bash(curl:*) Bash(jq:*) Read
 metadata:
   version: "1.0.0"
@@ -183,7 +183,7 @@ Almost all generative endpoints accept image references via the `storage` API. A
 | Symptom | Cause | Fix |
 |---|---|---|
 | `ENOTFOUND firefly-api.adobe.io` | DNS failure | Check VPN, corporate proxy, internal DNS |
-| `ETIMEDOUT` connecting | Outbound firewall blocks `*.adobe.io` | Allowlist `firefly-api.adobe.io`, `pscx.adobe.io`, `lr.adobe.io`, `ims-na1.adobelogin.com` |
+| `ETIMEDOUT` connecting | Outbound firewall blocks `*.adobe.io` | Allowlist `firefly-api.adobe.io`, `image.adobe.io`, `image.adobe.io`, `ims-na1.adobelogin.com` |
 | TLS handshake failure | Out-of-date CA bundle or MITM proxy | Update `ca-certificates`, configure corporate proxy CA correctly |
 | Intermittent 502s through proxy | Idle connection timeouts in corporate proxy | Configure shorter keepalive on the HTTP client |
 

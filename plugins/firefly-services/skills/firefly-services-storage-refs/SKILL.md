@@ -227,7 +227,7 @@ OUTPUT_URL=$(aws s3 presign s3://my-bucket/outputs/result.psd \
   --expires-in 7200 \
   --method PUT)
 
-curl --silent -X POST 'https://pscx.adobe.io/v2/smartObject' \
+curl --silent -X POST 'https://image.adobe.io/pie/psdService/smartObject' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-API-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \

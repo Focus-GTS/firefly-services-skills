@@ -2,7 +2,7 @@
 name: firefly-services-rate-limits
 description: Production rate-limit strategy for Adobe Firefly Services — default 4 RPM per credential, requesting increases, exponential backoff with jitter, token-bucket clients, SQS-fronted queueing for batch workloads, dead-letter queue handling, and per-endpoint quota planning. Use whenever the user mentions "429", "rate limited", "Too Many Requests", "Firefly is slow", "batch processing", "queueing", "high volume", "campaign at scale", or designs a system that will exceed 4 RPM. Encodes the production pattern that takes a generative pipeline from blocked at the default RPM ceiling to enterprise-scale campaign throughput.
 license: Apache-2.0
-compatibility: Applies to all Firefly Services endpoints (`firefly-api.adobe.io`, `pscx.adobe.io`, `lr.adobe.io`). Queue patterns shown for AWS (SQS + Lambda) and equivalent on GCP (Pub/Sub + Cloud Functions) or Azure (Service Bus + Functions).
+compatibility: Applies to all Firefly Services endpoints (`firefly-api.adobe.io`, `image.adobe.io`, `image.adobe.io`). Queue patterns shown for AWS (SQS + Lambda) and equivalent on GCP (Pub/Sub + Cloud Functions) or Azure (Service Bus + Functions).
 allowed-tools: Bash(curl:*) Read Write Edit
 metadata:
   version: "1.0.0"

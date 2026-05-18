@@ -2,7 +2,7 @@
 name: firefly-generate-similar
 description: Generate variations of an existing image using Adobe Firefly's Generate Similar API — how it differs from Generate Image with a style reference, when to use it for campaign variation generation, controlling variation diversity, multi-variation batches, and the production pattern for "give me 50 variations of this hero asset". Use whenever the user wants "variations", "more like this", "similar images", "generate-similar", "give me 10 versions of this", or runs campaigns that need many derivatives of a single approved hero. Encodes the variation-generation pattern used in production for enterprise campaign asset multiplication.
 license: Apache-2.0
-compatibility: Requires `firefly_api`, `ff_apis` scopes. Endpoint: `firefly-api.adobe.io/v3/images/generate-similar-async`. Source images passed as storage refs.
+compatibility: Requires `firefly_api`, `ff_apis` scopes. Endpoint: `firefly-api.adobe.io/v3/images/generate-similar`. Source images passed as storage refs.
 allowed-tools: Bash(curl:*) Bash(jq:*) Read Write Edit
 metadata:
   version: "1.0.0"
@@ -43,7 +43,7 @@ For campaign variation generation (hero-asset variants for a single approved con
 ## Step 1 — Submit the Generate Similar Job
 
 ```bash
-curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/generate-similar-async' \
+curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/generate-similar' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-Api-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \

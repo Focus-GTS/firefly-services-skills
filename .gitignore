@@ -21,3 +21,9 @@ package-lock.json
 # Test artifacts
 coverage/
 .nyc_output/
+
+# Generated build artifacts (PDF, intermediate HTML)
+build/_combined.md
+build/firefly-services-skills.html
+build/*.pdf
+

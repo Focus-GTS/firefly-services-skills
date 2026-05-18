@@ -2,7 +2,7 @@
 name: firefly-expand-fill
 description: Use Adobe Firefly's Generative Expand and Generative Fill APIs — when to use each, masking strategies, placement and aspect ratio control, prompt patterns for clean extension and inpainting, and the difference between filling versus replacing image regions. Use whenever the user mentions "generative expand", "extend canvas", "generative fill", "inpaint", "outpaint", "remove object", "replace background", "expand image", "fill image", "masking", "expand-async", "fill-async", or wants to grow / patch / modify an existing image. Encodes the production patterns for background extension on key-art assets and for brand-aligned background replacement in campaign creators.
 license: Apache-2.0
-compatibility: Requires `firefly_api`, `ff_apis` scopes. Endpoints: `firefly-api.adobe.io/v3/images/expand-async` and `/v3/images/fill-async`. Source images must be passed as storage refs.
+compatibility: Requires `firefly_api`, `ff_apis` scopes. Endpoints: `firefly-api.adobe.io/v3/images/expand` and `/v3/images/fill`. Source images must be passed as storage refs.
 allowed-tools: Bash(curl:*) Bash(jq:*) Read Write Edit
 metadata:
   version: "1.0.0"
@@ -46,7 +46,7 @@ In short: **canvas grows = Expand. Canvas stays = Fill.**
 ### Step 1 — Submit the Expand Job
 
 ```bash
-curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/expand-async' \
+curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/expand' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-Api-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \
@@ -126,7 +126,7 @@ MASK_UPLOAD_ID=$(curl --silent -X POST 'https://firefly-api.adobe.io/v2/storage/
 ### Step 2 — Submit the Fill Job
 
 ```bash
-curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/fill-async' \
+curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/fill' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-Api-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \

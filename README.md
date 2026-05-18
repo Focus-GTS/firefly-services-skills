@@ -117,9 +117,47 @@ Issues and PRs welcome. Please open an issue before submitting a substantive PR 
 
 ---
 
+## SDK provenance
+
+Every endpoint path, request shape, and response shape cited in these skills has been validated against the OpenAPI specifications bundled inside the official Adobe SDKs:
+
+| SDK | Validated against |
+|---|---|
+| `@adobe/firefly-apis` | v2.0.1 — `oas/FFApiOpenApi3.json` |
+| `@adobe/photoshop-apis` | v2.0.1 — `oas/PsApiOpenApi3.json` |
+| `@adobe/lightroom-apis` | v2.0.1 — `oas/LrApiOpenApi3.json` |
+| `@adobe/firefly-services-common-apis` | v2.0.0 |
+
+Servers per SDK:
+
+- Firefly endpoints live under `https://firefly-api.adobe.io`
+- Photoshop API endpoints live under `https://image.adobe.io/pie/psdService/*` and `https://image.adobe.io/sensei/*`
+- Lightroom API endpoints live under `https://image.adobe.io/lrService/*`
+
+The full canonical endpoint inventory is in [`docs/sdk-endpoints.md`](docs/sdk-endpoints.md).
+
+Adobe also publishes additional patterns in its developer documentation (for example, explicit async-suffixed endpoint variants for some Firefly operations) that are not in the SDK at the time of validation. If a workflow requires an endpoint or behavior not covered by the SDK, consult the current Adobe documentation at <https://developer.adobe.com/firefly-services/docs/> as the source of truth.
+
+---
+
+## Trademarks and independence
+
+This repository is independently developed and maintained by [FocusGTS](https://focusgts.com).
+
+- "Adobe", "Adobe Firefly", "Adobe Firefly Services", "Photoshop", "Lightroom", "InDesign", "Creative Cloud", "Adobe Express", "Adobe Experience Manager", "Adobe Sensei", "GenStudio", and "Adobe Stock" are trademarks or registered trademarks of **Adobe Inc.** in the United States and/or other countries. They are used here under nominative fair use solely to identify the products these skills are designed to interoperate with.
+- "Claude" and "Claude Code" are trademarks of **Anthropic, PBC**.
+- This repository is **not** sponsored, endorsed, affiliated with, or supported by Adobe Inc. It is **not** an official Adobe product, distribution, or SDK.
+- The skills here are independent playbooks. They wrap a layer of opinion and pattern around Adobe's official SDKs (`@adobe/firefly-apis`, `@adobe/photoshop-apis`, `@adobe/lightroom-apis`, `@adobe/firefly-services-common-apis`), which they reference but do not redistribute or modify.
+
+See [NOTICE](NOTICE) for the full trademark and attribution statement.
+
+---
+
 ## License
 
-Apache License 2.0. See [LICENSE](LICENSE).
+Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+
+Distributed on an "AS IS" basis, **without warranties or conditions of any kind**, either express or implied. Endpoint paths, parameter shapes, and rate limits may change as Adobe evolves its APIs; verify against current official Adobe documentation before relying on any specific value cited in these skills.
 
 Copyright © 2026 FocusGTS.
 

@@ -1,8 +1,8 @@
 ---
 name: photoshop-api-actions
-description: Apply Photoshop actions, smart-object replacement, and document operations programmatically using the Adobe Photoshop API — running .atn action files, smart-object source replacement, text replacement, layer visibility toggles, and the input/output storage pattern. Use whenever the user mentions "Photoshop API", "smart object replacement", "smart-object", "apply action", "action runner", "pscx.adobe.io", ".atn file", "PSD automation", "layer replacement", "text layer update", or wants to drive Photoshop operations from a server without the desktop app. Encodes the production pattern for replacing smart-object content in key-art PSDs at enterprise scale.
+description: Apply Photoshop actions, smart-object replacement, and document operations programmatically using the Adobe Photoshop API — running .atn action files, smart-object source replacement, text replacement, layer visibility toggles, and the input/output storage pattern. Use whenever the user mentions "Photoshop API", "smart object replacement", "smart-object", "apply action", "action runner", "image.adobe.io", ".atn file", "PSD automation", "layer replacement", "text layer update", or wants to drive Photoshop operations from a server without the desktop app. Encodes the production pattern for replacing smart-object content in key-art PSDs at enterprise scale.
 license: Apache-2.0
-compatibility: Requires `creative_sdk` scope. Endpoint base: `pscx.adobe.io/v2/*`. Source PSDs and assets pass through storage refs (input + output destinations). Most operations are async with job polling.
+compatibility: Requires `creative_sdk` scope. Endpoint base: `image.adobe.io/v2/*`. Source PSDs and assets pass through storage refs (input + output destinations). Most operations are async with job polling.
 allowed-tools: Bash(curl:*) Bash(jq:*) Read Write Edit
 metadata:
   version: "1.0.0"
@@ -22,7 +22,7 @@ Use this skill when:
 - An existing Photoshop action (`.atn`) needs to run server-side
 - Layer visibility, text content, or smart-object content must change programmatically
 - The output is a rendered image (JPEG, PNG) from a PSD template
-- The user mentions "Photoshop API", "smart object", "action runner", or `pscx.adobe.io`
+- The user mentions "Photoshop API", "smart object", "action runner", or `image.adobe.io`
 
 Do **NOT** use this skill when:
 - The transformation is purely color/exposure adjustment — use `lightroom-api-batch`
@@ -55,7 +55,7 @@ Output `type` values:
 The canonical template-driven workflow. A template PSD has named smart-object layers; replace each layer's contents with a new image and render the result.
 
 ```bash
-curl --silent -X POST 'https://pscx.adobe.io/v2/smartObject' \
+curl --silent -X POST 'https://image.adobe.io/pie/psdService/smartObject' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-API-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \
@@ -94,7 +94,7 @@ Response:
 ```json
 {
   "_links": {
-    "self": {"href": "https://pscx.adobe.io/v2/status/<job-id>"}
+    "self": {"href": "https://image.adobe.io/v2/status/<job-id>"}
   }
 }
 ```
@@ -124,7 +124,7 @@ If two layers share a name, the API replaces both — sometimes desirable, often
 ## Step 2 — Text Layer Replacement
 
 ```bash
-curl --silent -X POST 'https://pscx.adobe.io/v2/documentManifest' \
+curl --silent -X POST 'https://image.adobe.io/pie/psdService/documentManifest' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-API-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \
@@ -165,7 +165,7 @@ Specifying a font not in the supported list silently fails — the API uses a fa
 Run an existing `.atn` action file against an input image:
 
 ```bash
-curl --silent -X POST 'https://pscx.adobe.io/v2/actions/play' \
+curl --silent -X POST 'https://image.adobe.io/pie/psdService/photoshopActions' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-API-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \
@@ -199,7 +199,7 @@ These are typically built by the customer's creative team and handed to the FDE 
 For dynamic compositions where layers turn on/off based on campaign rules:
 
 ```bash
-curl --silent -X POST 'https://pscx.adobe.io/v2/documentManifest' \
+curl --silent -X POST 'https://image.adobe.io/pie/psdService/documentManifest' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-API-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \
@@ -224,7 +224,7 @@ Layer visibility toggles are cheap (no rendering of off layers) — use liberall
 To know what layers exist in a template PSD before operating on it, fetch the manifest:
 
 ```bash
-curl --silent -X POST 'https://pscx.adobe.io/v2/documentManifest' \
+curl --silent -X POST 'https://image.adobe.io/pie/psdService/documentManifest' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-API-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \

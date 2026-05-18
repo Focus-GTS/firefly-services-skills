@@ -157,7 +157,7 @@ Status values: `pending` → `training` → `succeeded` | `failed`. The 5-minute
 Once training succeeds, generate with the model by including `customModelId` and the `x-model-version: image3_custom` header:
 
 ```bash
-curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/generate-async' \
+curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/generate' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-Api-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'x-model-version: image3_custom' \
