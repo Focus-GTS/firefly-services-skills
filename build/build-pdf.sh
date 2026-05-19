@@ -26,17 +26,26 @@ ORDER=(
   "photoshop-api-actions"
   "photoshop-api-composition"
   "lightroom-api-batch"
+  "firefly-batch-pipeline"
+  "firefly-brand-guardrails"
+  "firefly-cost-optimization"
+  "genstudio-extensibility-scaffold"
 )
 
-TIER1_END=4 # index 4 is firefly-services-storage-refs (last Tier 1)
+TIER1_END=4   # index 4 is firefly-services-storage-refs (last Tier 1)
+TIER2_END=12  # index 12 is lightroom-api-batch (last Tier 2)
 
 # Strip frontmatter from a SKILL.md and emit a pretty header card + body
 emit_skill() {
   local idx=$1
   local slug=$2
   local file="$SKILLS_DIR/$slug/SKILL.md"
-  local tier="Tier 2 — API & integration"
-  if (( idx <= TIER1_END )); then tier="Tier 1 — Foundation"; fi
+  local tier="Tier 3 — Architecture patterns"
+  if (( idx <= TIER1_END )); then
+    tier="Tier 1 — Foundation"
+  elif (( idx <= TIER2_END )); then
+    tier="Tier 2 — API & integration"
+  fi
 
   # Extract frontmatter fields
   local fm description compat tools category
