@@ -1,0 +1,150 @@
+# Planning tracks — curated decision paths for project-planning mode.
+#
+# Each track maps a user intent to an ordered sequence of relevant skills.
+# The catalog generator reads this file and renders the tracks into the
+# auto-generated catalog SKILL.md. Updating a track means editing this
+# file and letting the daily cron job regenerate the catalog.
+#
+# Schema per track:
+#   id          short stable identifier (kebab-case)
+#   intent      one-line user-intent phrase that triggers this track
+#   when        a sentence describing when this track applies
+#   skills      ordered list of skill names (must match an existing SKILL.md)
+#   audience    "fde" | "customer-engineering" | "ops" | "platform"
+#   tier        "foundation" | "scaling" | "specialized"
+
+tracks:
+  - id: from-zero-bootstrap
+    intent: Set up Firefly Services from scratch
+    when: A new project needs credentials, SDK install, and a first working API call against the platform.
+    audience: fde
+    tier: foundation
+    skills:
+      - firefly-services-bootstrap
+      - firefly-services-auth
+      - firefly-services-storage-refs
+      - firefly-generate-image-v3-async
+
+  - id: troubleshoot-production-issue
+    intent: Diagnose a Firefly Services failure in production
+    when: An API call is returning 4xx/5xx, an integration that used to work is failing, or rate limits are kicking in.
+    audience: fde
+    tier: foundation
+    skills:
+      - firefly-services-troubleshoot
+      - firefly-services-auth
+      - firefly-services-rate-limits
+
+  - id: scale-to-batch-volume
+    intent: Move from single-call usage to high-volume batch generation
+    when: A workload is exceeding the 4 RPM default rate limit and needs queue-fronted infrastructure to scale.
+    audience: platform
+    tier: scaling
+    skills:
+      - firefly-services-rate-limits
+      - firefly-batch-pipeline
+      - firefly-cost-optimization
+      - firefly-services-troubleshoot
+
+  - id: build-campaign-assembly-pipeline
+    intent: Build a campaign-automation pipeline that combines generative + template-based composition
+    when: A customer needs to assemble many campaign assets from a template PSD + generated content + brand text + multiple aspect ratios.
+    audience: platform
+    tier: scaling
+    skills:
+      - firefly-batch-pipeline
+      - firefly-generate-image-v3-async
+      - photoshop-api-composition
+      - photoshop-api-actions
+      - firefly-brand-guardrails
+
+  - id: train-and-deploy-custom-model
+    intent: Train a custom brand-aligned generative model
+    when: Base Firefly generation is not brand-consistent enough; the team needs a custom-trained model on 10-30 reference images.
+    audience: fde
+    tier: specialized
+    skills:
+      - firefly-custom-models
+      - firefly-services-storage-refs
+      - firefly-brand-guardrails
+      - firefly-cost-optimization
+
+  - id: variation-and-expansion-workflow
+    intent: Generate variations of an existing image, then expand or fill regions
+    when: A creative team has an approved hero asset and needs derivatives — variations, aspect-ratio changes, background swaps.
+    audience: customer-engineering
+    tier: foundation
+    skills:
+      - firefly-generate-similar
+      - firefly-expand-fill
+      - firefly-services-storage-refs
+
+  - id: video-generation-workflow
+    intent: Generate short commercially-safe video clips
+    when: A workflow needs Firefly's video model — text-to-video or image-to-video — for B-roll, motion graphics, or animatic generation.
+    audience: customer-engineering
+    tier: specialized
+    skills:
+      - firefly-video-model
+      - firefly-services-storage-refs
+      - firefly-services-rate-limits
+
+  - id: photoshop-composition-workflow
+    intent: Compose final assets from PSD templates with smart-object replacement
+    when: Generated content needs to be inserted into brand-template PSDs with text overlays and final JPEG rendering.
+    audience: platform
+    tier: scaling
+    skills:
+      - photoshop-api-actions
+      - photoshop-api-composition
+      - firefly-services-storage-refs
+
+  - id: lightroom-batch-normalize
+    intent: Normalize a set of mixed-source images for visual consistency
+    when: A campaign has images from multiple sources/cameras that need to read as one consistent set — preset, auto-tone, color grade.
+    audience: customer-engineering
+    tier: foundation
+    skills:
+      - lightroom-api-batch
+      - firefly-services-storage-refs
+
+  - id: brand-compliance-stack
+    intent: Enforce brand and compliance guardrails on generative output
+    when: Generated content must meet brand guidelines, regulatory requirements, or human review before reaching customers.
+    audience: platform
+    tier: specialized
+    skills:
+      - firefly-brand-guardrails
+      - firefly-custom-models
+      - firefly-batch-pipeline
+
+  - id: cost-and-finops
+    intent: Reduce or forecast Firefly Services consumption cost
+    when: Consumption is higher than expected, a customer is asking for cost projections, or the team needs to identify caching/batching opportunities.
+    audience: ops
+    tier: scaling
+    skills:
+      - firefly-cost-optimization
+      - firefly-services-rate-limits
+      - firefly-batch-pipeline
+
+  - id: genstudio-extensibility
+    intent: Build a GenStudio for Performance Marketing extension
+    when: A customer needs to extend GenStudio with custom UI, brand-config bindings, or event-driven workflows via App Builder.
+    audience: platform
+    tier: specialized
+    skills:
+      - genstudio-extensibility-scaffold
+      - firefly-services-bootstrap
+      - firefly-services-auth
+      - firefly-brand-guardrails
+
+  - id: jwt-migration
+    intent: Migrate from deprecated JWT credentials to OAuth Server-to-Server
+    when: An existing integration uses JWT credentials; JWT reached end-of-life on June 30, 2025 and certificates expire by March 1, 2026.
+    audience: ops
+    tier: foundation
+    skills:
+      - firefly-services-auth
+      - firefly-services-bootstrap
+      - firefly-services-troubleshoot
