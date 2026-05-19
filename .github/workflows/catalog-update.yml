@@ -10,6 +10,7 @@ on:
     paths:
       - "plugins/firefly-services/skills/**/SKILL.md"
       - "config/planning-tracks.yml"
+      - "config/external-sources.yml"
       - "scripts/catalog/build-catalog.ts"
       - ".github/workflows/catalog-update.yml"
   # Manual trigger for testing.

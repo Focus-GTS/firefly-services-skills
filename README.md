@@ -46,7 +46,7 @@ Self-updating discovery and planning entry points. The catalog regenerates itsel
 
 | Skill | Purpose |
 |---|---|
-| [`firefly-skills-catalog`](plugins/firefly-services/skills/firefly-skills-catalog/SKILL.md) | Auto-generated index of every skill, with planning-mode decision trees. Regenerated daily by a GitHub Actions cron job — do not edit by hand. |
+| [`firefly-skills-catalog`](plugins/firefly-services/skills/firefly-skills-catalog/SKILL.md) | Auto-generated index of every skill — ours **plus** Adobe-published and community Firefly-related skills auto-discovered from external repositories. Regenerated daily by a GitHub Actions cron job. Do not edit by hand. |
 | [`firefly-project-planner`](plugins/firefly-services/skills/firefly-project-planner/SKILL.md) | Interactive project-planning assistant. Asks 4 clarifying questions, returns a structured project plan with the right skills in the right order. |
 
 ### Tier 3 — Architecture patterns

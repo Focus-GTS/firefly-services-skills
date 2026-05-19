@@ -17,14 +17,18 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
+import { glob } from "node:fs/promises";
 import YAML from "yaml";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const SKILLS_DIR = path.join(REPO_ROOT, "plugins/firefly-services/skills");
 const TRACKS_FILE = path.join(REPO_ROOT, "config/planning-tracks.yml");
+const EXTERNAL_SOURCES_FILE = path.join(REPO_ROOT, "config/external-sources.yml");
+const EXTERNAL_CACHE_ROOT = process.env.CATALOG_EXTERNAL_CACHE ?? path.join(os.tmpdir(), "firefly-skills-catalog-external");
 const CATALOG_SKILL_DIR = path.join(SKILLS_DIR, "firefly-skills-catalog");
 const CATALOG_SKILL_PATH = path.join(CATALOG_SKILL_DIR, "SKILL.md");
 const CATALOG_VALIDATION_PATH = path.join(CATALOG_SKILL_DIR, "_validation.md");
@@ -69,6 +73,37 @@ interface PlanningTrack {
 
 interface TracksFile {
   tracks: PlanningTrack[];
+}
+
+interface ExternalSource {
+  id: string;
+  publisher: string;
+  repo: string;
+  branch?: string;
+  skill_globs: string[];
+  license_note?: string;
+  relevance_keywords: string[];
+  notes?: string;
+}
+
+interface ExternalSourcesFile {
+  sources: ExternalSource[];
+}
+
+interface ExternalSkill {
+  sourceId: string;
+  publisher: string;
+  repoUrl: string;
+  /** Browsable URL to the SKILL.md on github.com (best-effort) */
+  htmlUrl: string;
+  name: string;
+  description: string;
+  category: string;
+  /** Path within the source repo */
+  relPath: string;
+  lastCommitTs: number;
+  /** Whether the skill matched a relevance keyword */
+  matched: boolean;
 }
 
 const SKILL_NAME_RE = /^[a-z][a-z0-9-]*[a-z0-9]$/;
@@ -253,6 +288,113 @@ async function readTracks(): Promise<PlanningTrack[]> {
   return parsed.tracks;
 }
 
+async function readExternalSources(): Promise<ExternalSource[]> {
+  try {
+    const raw = await fs.readFile(EXTERNAL_SOURCES_FILE, "utf8");
+    const parsed = YAML.parse(raw) as ExternalSourcesFile;
+    return parsed?.sources ?? [];
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw err;
+  }
+}
+
+function repoToCacheName(repoUrl: string): string {
+  return repoUrl.replace(/^https?:\/\/github\.com\//, "").replace(/\.git$/, "").replace(/\//g, "__");
+}
+
+function repoToHtmlBase(repoUrl: string, branch = "main"): string {
+  const stripped = repoUrl.replace(/\.git$/, "");
+  return `${stripped}/blob/${branch}`;
+}
+
+/** Clone if missing, fetch+reset if present. Returns the cache path. */
+async function ensureExternalSource(source: ExternalSource): Promise<string> {
+  await fs.mkdir(EXTERNAL_CACHE_ROOT, { recursive: true });
+  const dir = path.join(EXTERNAL_CACHE_ROOT, repoToCacheName(source.repo));
+  const branch = source.branch ?? "main";
+  try {
+    await fs.access(path.join(dir, ".git"));
+    // Already cloned — fetch + reset to be idempotent.
+    execSync(`git fetch --depth 1 origin ${branch}`, { cwd: dir, stdio: ["ignore", "pipe", "pipe"] });
+    execSync(`git reset --hard origin/${branch}`, { cwd: dir, stdio: ["ignore", "pipe", "pipe"] });
+  } catch {
+    // Not cloned yet — shallow-clone.
+    execSync(`git clone --depth 1 --branch ${branch} ${source.repo} "${dir}"`, {
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  }
+  return dir;
+}
+
+function isRelevant(text: string, keywords: string[]): boolean {
+  const lower = text.toLowerCase();
+  return keywords.some((k) => lower.includes(k.toLowerCase()));
+}
+
+async function scanExternalSource(source: ExternalSource): Promise<ExternalSkill[]> {
+  const root = await ensureExternalSource(source);
+  const matched: ExternalSkill[] = [];
+
+  for (const pattern of source.skill_globs) {
+    for await (const filePath of glob(pattern, { cwd: root })) {
+      const full = path.join(root, filePath);
+      let parsed: { fm: SkillFrontmatter; body: string };
+      try {
+        parsed = await readFrontmatter(full);
+      } catch {
+        continue; // malformed external SKILL.md — skip silently
+      }
+      const haystack = `${parsed.fm.name} ${parsed.fm.description} ${filePath}`;
+      const matchedRelevance = isRelevant(haystack, source.relevance_keywords);
+      if (!matchedRelevance) continue;
+
+      // Best-effort last-commit timestamp from the external repo's history.
+      let lastCommitTs = 0;
+      try {
+        const out = execSync(`git log -1 --format=%ct -- "${filePath}"`, {
+          cwd: root,
+          encoding: "utf8",
+          stdio: ["ignore", "pipe", "ignore"],
+        }).trim();
+        const ts = Number(out);
+        if (Number.isFinite(ts) && ts > 0) lastCommitTs = ts * 1000;
+      } catch {
+        const stat = await fs.stat(full);
+        lastCommitTs = stat.mtime.getTime();
+      }
+
+      matched.push({
+        sourceId: source.id,
+        publisher: source.publisher,
+        repoUrl: source.repo.replace(/\.git$/, ""),
+        htmlUrl: `${repoToHtmlBase(source.repo, source.branch ?? "main")}/${filePath}`,
+        name: parsed.fm.name,
+        description: parsed.fm.description,
+        category: parsed.fm.metadata?.category ?? "uncategorized",
+        relPath: filePath,
+        lastCommitTs,
+        matched: true,
+      });
+    }
+  }
+  return matched;
+}
+
+async function discoverExternalSkills(): Promise<{ source: ExternalSource; skills: ExternalSkill[]; error?: string }[]> {
+  const sources = await readExternalSources();
+  const results: { source: ExternalSource; skills: ExternalSkill[]; error?: string }[] = [];
+  for (const source of sources) {
+    try {
+      const skills = await scanExternalSource(source);
+      results.push({ source, skills });
+    } catch (err) {
+      results.push({ source, skills: [], error: (err as Error).message });
+    }
+  }
+  return results;
+}
+
 function validateTracksAgainstSkills(tracks: PlanningTrack[], skills: SkillInfo[]): void {
   const names = new Set(skills.map((s) => s.name));
   const errors: string[] = [];
@@ -339,7 +481,52 @@ function escapeMd(s: string): string {
   return s.replace(/\|/g, "\\|");
 }
 
-function renderCatalog(skills: SkillInfo[], tracks: PlanningTrack[]): string {
+function renderExternalSection(
+  results: { source: ExternalSource; skills: ExternalSkill[]; error?: string }[],
+): string {
+  const lines: string[] = [];
+
+  lines.push("## External skills (auto-discovered)");
+  lines.push("");
+  lines.push(
+    "> **Indexed for discoverability only, not endorsed by FocusGTS.** External skills are published and maintained by their respective authors. Each skill's quality, correctness, and currency are the responsibility of the publisher listed below. FocusGTS does not redistribute, modify, or warrant any external skill. Listed here so users navigating this catalog can find every known Firefly-related skill, not just ours.",
+  );
+  lines.push("");
+
+  for (const { source, skills, error } of results) {
+    lines.push(`### ${source.publisher} — \`${source.repo.replace(/^https?:\/\/github\.com\//, "").replace(/\.git$/, "")}\``);
+    lines.push("");
+    if (source.notes) {
+      lines.push(source.notes.trim());
+      lines.push("");
+    }
+    if (error) {
+      lines.push(`_Scan failed for this source on the most recent generator run: ${escapeMd(error)}_`);
+      lines.push("");
+      continue;
+    }
+    if (skills.length === 0) {
+      lines.push("_No relevant skills found in this source on the most recent scan. The relevance filter requires the skill's frontmatter or path to match one of: " +
+        source.relevance_keywords.map((k) => `\`${k}\``).join(", ") + "._");
+      lines.push("");
+      continue;
+    }
+
+    lines.push("| Skill | Category | Last commit | Source |");
+    lines.push("|---|---|---|---|");
+    for (const s of skills.sort((a, b) => a.name.localeCompare(b.name))) {
+      const when = s.lastCommitTs ? new Date(s.lastCommitTs).toISOString().slice(0, 10) : "—";
+      const stale = s.lastCommitTs > 0 && Date.now() - s.lastCommitTs > 365 * 24 * 60 * 60 * 1000;
+      const staleTag = stale ? " _(stale)_" : "";
+      lines.push(`| [\`${s.name}\`](${s.htmlUrl}) | ${s.category} | ${when}${staleTag} | [${escapeMd(s.relPath)}](${s.htmlUrl}) |`);
+    }
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
+function renderCatalog(skills: SkillInfo[], tracks: PlanningTrack[], external: { source: ExternalSource; skills: ExternalSkill[]; error?: string }[]): string {
   const skillsByName = new Map(skills.map((s) => [s.name, s]));
   const byCategory = categoryGroup(skills);
   const nonCatalogCount = skills.filter((s) => s.name !== CATALOG_NAME).length;
@@ -410,12 +597,15 @@ The 15 most recently updated skills (by git history) in the last 30 days:
 
 ${renderRecentlyUpdated(skills)}
 
+${renderExternalSection(external)}
+
 ## How this skill is maintained
 
 This SKILL.md is regenerated by \`scripts/catalog/build-catalog.ts\`:
 
 - **Trigger**: every push to \`main\`, plus a daily GitHub Actions cron at 14:00 UTC.
-- **Source**: the YAML frontmatter of every SKILL.md under \`plugins/firefly-services/skills/\`, plus the planning-track definitions in \`config/planning-tracks.yml\`.
+- **Source**: the YAML frontmatter of every SKILL.md under \`plugins/firefly-services/skills/\`, the planning-track definitions in \`config/planning-tracks.yml\`, and the external sources listed in \`config/external-sources.yml\`.
+- **External scan**: each external source listed in \`config/external-sources.yml\` is shallow-cloned (or fetched), filtered by relevance keywords, and surfaced in the catalog with a clear "indexed not endorsed" disclaimer.
 - **Validation**: the generator fails CI if any SKILL.md is malformed or if a planning track references an unknown skill.
 
 To add a new track, edit \`config/planning-tracks.yml\` and push. To add a new skill, drop a new SKILL.md into a new directory under \`plugins/firefly-services/skills/\`; the catalog will pick it up automatically.
@@ -431,19 +621,34 @@ To add a new track, edit \`config/planning-tracks.yml\` and push. To add a new s
   return frontmatter + "\n\n" + body;
 }
 
-function renderValidation(skills: SkillInfo[], tracks: PlanningTrack[]): string {
+function renderValidation(
+  skills: SkillInfo[],
+  tracks: PlanningTrack[],
+  external: { source: ExternalSource; skills: ExternalSkill[]; error?: string }[],
+): string {
   const generatedAt = new Date().toISOString();
   const nonCatalogCount = skills.filter((s) => s.name !== CATALOG_NAME).length;
+  const externalCount = external.reduce((acc, e) => acc + e.skills.length, 0);
+  const externalRows = external
+    .map((e) => `| \`${e.source.id}\` | ${e.skills.length} | ${e.error ? "errored: " + escapeMd(e.error) : "ok"} |`)
+    .join("\n");
   return `# Catalog validation log
 
 Last run: \`${generatedAt}\`
 
 | Metric | Value |
 |---|---|
-| Skills indexed | ${nonCatalogCount} (excluding the catalog skill itself) |
+| Internal skills indexed | ${nonCatalogCount} (excluding the catalog skill itself) |
+| External skills indexed | ${externalCount} (from ${external.length} source(s)) |
 | Planning tracks | ${tracks.length} |
 | Categories | ${new Set(skills.map((s) => s.category)).size} |
-| Cross-references | ${skills.reduce((acc, s) => acc + s.references.length, 0)} |
+| Cross-references (internal) | ${skills.reduce((acc, s) => acc + s.references.length, 0)} |
+
+## External source scan results
+
+| Source | Matched skills | Status |
+|---|---|---|
+${externalRows || "_no external sources configured_"}
 
 This file is regenerated by \`scripts/catalog/build-catalog.ts\` on every catalog build.
 `;
@@ -456,20 +661,30 @@ async function main(): Promise<void> {
   const tracks = await readTracks();
   validateTracksAgainstSkills(tracks, skills);
 
+  // External sources — best-effort. If git clone fails (no network in CI
+  // sandbox, etc.), we surface the error in the catalog instead of failing
+  // the whole build. Our own skills always render.
+  const external = await discoverExternalSkills();
+
   // The catalog skill must already exist as a directory before we write to it.
   await fs.mkdir(CATALOG_SKILL_DIR, { recursive: true });
 
-  const rendered = renderCatalog(skills, tracks);
-  const validationLog = renderValidation(skills, tracks);
+  const rendered = renderCatalog(skills, tracks, external);
+  const validationLog = renderValidation(skills, tracks, external);
 
   await fs.writeFile(CATALOG_SKILL_PATH, rendered, "utf8");
   await fs.writeFile(CATALOG_VALIDATION_PATH, validationLog, "utf8");
 
   const nonCatalogCount = skills.filter((s) => s.name !== CATALOG_NAME).length;
+  const externalCount = external.reduce((acc, e) => acc + e.skills.length, 0);
   console.log(`Catalog written: ${CATALOG_SKILL_PATH}`);
-  console.log(`  ${nonCatalogCount} skills indexed`);
+  console.log(`  ${nonCatalogCount} internal skills indexed`);
+  console.log(`  ${externalCount} external skills indexed (from ${external.length} source(s))`);
   console.log(`  ${tracks.length} planning tracks`);
   console.log(`  ${new Set(skills.map((s) => s.category)).size} categories`);
+  for (const e of external) {
+    if (e.error) console.log(`  WARN: external source ${e.source.id} failed: ${e.error}`);
+  }
 }
 
 main().catch((err) => {
