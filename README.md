@@ -10,7 +10,7 @@ Built by [FocusGTS](https://focusgts.com) — a forward-deployed engineering par
 
 ## What's in here
 
-This repository hosts the `firefly-services` plugin — 13 skills that cover the FDE-grade lifecycle for Adobe Firefly Services:
+This repository hosts the `firefly-services` plugin — 17 skills that cover the FDE-grade lifecycle for Adobe Firefly Services:
 
 ### Foundation skills
 
@@ -39,6 +39,17 @@ This repository hosts the `firefly-services` plugin — 13 skills that cover the
 | [`photoshop-api-actions`](plugins/firefly-services/skills/photoshop-api-actions/SKILL.md) | Smart-object replacement, action playback, text-layer editing, document manifests |
 | [`photoshop-api-composition`](plugins/firefly-services/skills/photoshop-api-composition/SKILL.md) | Multi-stage orchestration — the 15-20 function state-machine pattern |
 | [`lightroom-api-batch`](plugins/firefly-services/skills/lightroom-api-batch/SKILL.md) | Preset application, auto-tone, batch normalization across image sets |
+
+### Tier 3 — Architecture patterns
+
+End-to-end blueprints that stitch the foundation, generative, and editing skills into deployable architectures for enterprise-scale workloads.
+
+| Skill | Purpose |
+|---|---|
+| [`firefly-batch-pipeline`](plugins/firefly-services/skills/firefly-batch-pipeline/SKILL.md) | The end-to-end production reference architecture — SQS + Lambda + Step Functions + DynamoDB for high-volume campaign workloads |
+| [`firefly-brand-guardrails`](plugins/firefly-services/skills/firefly-brand-guardrails/SKILL.md) | The four-layer guardrail stack — model lock-in, prompt filtering, output classification, human review queues |
+| [`firefly-cost-optimization`](plugins/firefly-services/skills/firefly-cost-optimization/SKILL.md) | FinOps for Firefly Services — where spend goes, what to cache, the "consumption is 3× forecast" debugging sequence |
+| [`genstudio-extensibility-scaffold`](plugins/firefly-services/skills/genstudio-extensibility-scaffold/SKILL.md) | App Builder extension scaffold for GenStudio for Performance Marketing — brand-config bindings, UI surfaces, event subscriptions |
 
 ---
 
