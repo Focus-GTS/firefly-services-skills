@@ -15,7 +15,7 @@ author: "FocusGTS"
 
 <div class="cover-meta">
 
-**17 skills · ~4,800 lines · Apache-2.0**
+**19 skills · ~5,500 lines · self-updating catalog · Apache-2.0**
 
 </div>
 

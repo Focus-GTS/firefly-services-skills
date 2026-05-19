@@ -30,21 +30,26 @@ ORDER=(
   "firefly-brand-guardrails"
   "firefly-cost-optimization"
   "genstudio-extensibility-scaffold"
+  "firefly-skills-catalog"
+  "firefly-project-planner"
 )
 
 TIER1_END=4   # index 4 is firefly-services-storage-refs (last Tier 1)
 TIER2_END=12  # index 12 is lightroom-api-batch (last Tier 2)
+TIER3_END=16  # index 16 is genstudio-extensibility-scaffold (last Tier 3)
 
 # Strip frontmatter from a SKILL.md and emit a pretty header card + body
 emit_skill() {
   local idx=$1
   local slug=$2
   local file="$SKILLS_DIR/$slug/SKILL.md"
-  local tier="Tier 3 — Architecture patterns"
+  local tier="Meta — discovery & planning"
   if (( idx <= TIER1_END )); then
     tier="Tier 1 — Foundation"
   elif (( idx <= TIER2_END )); then
     tier="Tier 2 — API & integration"
+  elif (( idx <= TIER3_END )); then
+    tier="Tier 3 — Architecture patterns"
   fi
 
   # Extract frontmatter fields

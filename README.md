@@ -10,7 +10,7 @@ Built by [FocusGTS](https://focusgts.com) — a forward-deployed engineering par
 
 ## What's in here
 
-This repository hosts the `firefly-services` plugin — 17 skills that cover the FDE-grade lifecycle for Adobe Firefly Services:
+This repository hosts the `firefly-services` plugin — 19 skills (17 workflow skills + 2 meta-skills) that cover the FDE-grade lifecycle for Adobe Firefly Services:
 
 ### Foundation skills
 
@@ -39,6 +39,15 @@ This repository hosts the `firefly-services` plugin — 17 skills that cover the
 | [`photoshop-api-actions`](plugins/firefly-services/skills/photoshop-api-actions/SKILL.md) | Smart-object replacement, action playback, text-layer editing, document manifests |
 | [`photoshop-api-composition`](plugins/firefly-services/skills/photoshop-api-composition/SKILL.md) | Multi-stage orchestration — the 15-20 function state-machine pattern |
 | [`lightroom-api-batch`](plugins/firefly-services/skills/lightroom-api-batch/SKILL.md) | Preset application, auto-tone, batch normalization across image sets |
+
+### Meta-skills
+
+Self-updating discovery and planning entry points. The catalog regenerates itself daily via GitHub Actions; the planner uses it interactively.
+
+| Skill | Purpose |
+|---|---|
+| [`firefly-skills-catalog`](plugins/firefly-services/skills/firefly-skills-catalog/SKILL.md) | Auto-generated index of every skill, with planning-mode decision trees. Regenerated daily by a GitHub Actions cron job — do not edit by hand. |
+| [`firefly-project-planner`](plugins/firefly-services/skills/firefly-project-planner/SKILL.md) | Interactive project-planning assistant. Asks 4 clarifying questions, returns a structured project plan with the right skills in the right order. |
 
 ### Tier 3 — Architecture patterns
 
