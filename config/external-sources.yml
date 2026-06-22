@@ -1,0 +1,43 @@
+# External-source registry — repos the catalog scans alongside our own skills
+# to surface Firefly-related skills published by Adobe and (later) the community.
+#
+# The catalog generator clones each source (or fetches updates if already
+# cloned), walks its SKILL.md files, applies the relevance filter, and renders
+# the matching skills into the catalog's "External skills" section with a
+# clear "indexed not endorsed" disclaimer.
+#
+# To add a new source: append an entry below and re-run `npm run catalog:build`.
+# The daily GitHub Actions cron picks up new sources automatically on the
+# next run.
+
+sources:
+  - id: adobe-skills
+    publisher: Adobe Inc.
+    repo: https://github.com/adobe/skills.git
+    branch: main
+    # Subdirectory globs (relative to repo root) where SKILL.md files live.
+    # Adobe's repo uses plugins/<product-namespace>/<plugin>/skills/<skill>/SKILL.md
+    # and plugins/<plugin>/skills/<skill>/SKILL.md.
+    skill_globs:
+      - "plugins/**/skills/*/SKILL.md"
+    license_note: Apache-2.0 (per LICENSE in adobe/skills)
+    # Relevance filter — a skill is included only if its frontmatter description
+    # (or its containing path) matches at least one of these substrings,
+    # case-insensitive. This keeps non-Firefly Adobe skills (AEM-only,
+    # GenStudio-unrelated AEP-only, etc.) out of the catalog.
+    relevance_keywords:
+      - firefly
+      - firefly-services
+      - photoshop api
+      - photoshop-api
+      - lightroom api
+      - lightroom-api
+      - genstudio
+      - creative cloud
+      - creative-cloud
+      - "generative ai"
+    notes: |
+      Adobe's official skill repository. Listed here so the catalog reflects
+      Adobe-published Firefly-related skills the moment they ship, without
+      manual intervention. Indexed for navigation only — not endorsed by
+      FocusGTS and not redistributed.

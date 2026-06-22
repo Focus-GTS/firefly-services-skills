@@ -1,0 +1,28 @@
+# Node
+node_modules/
+
+# Local data / caches
+.claude-flow/
+*.db
+*.rvf
+*.rvf.lock
+
+# Env / secrets
+.env
+.env.*
+*.secret
+
+# Editor
+.DS_Store
+.vscode/
+.idea/
+
+# Test artifacts
+coverage/
+.nyc_output/
+
+# Generated build artifacts (PDF, intermediate HTML)
+build/_combined.md
+build/firefly-services-skills.html
+build/*.pdf
+

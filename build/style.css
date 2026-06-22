@@ -1,0 +1,316 @@
+/* FocusGTS brand — Cool Black, Majorelle Blue, Lavender Indigo, Pale Violet, Wheat */
+@import url('https://fonts.googleapis.com/css2?family=Gabarito:wght@400;500;600;700;800&family=Raleway:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --cool-black: #06265F;
+  --majorelle: #7647DD;
+  --lavender: #9966F0;
+  --pale-violet: #CB8CFF;
+  --wheat: #F2DCB3;
+  --ink: #0a1628;
+  --ink-2: #1a2b4a;
+  --muted: #5a6a85;
+  --border: #e3e6ec;
+  --code-bg: #f7f5fc;
+  --table-stripe: #faf8ff;
+}
+
+@page {
+  size: Letter;
+  margin: 0.45in 0.55in 0.55in 0.55in;
+  @bottom-center {
+    content: counter(page) " / " counter(pages);
+    color: var(--muted);
+    font-family: 'Raleway', sans-serif;
+    font-size: 8.5pt;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  font-family: 'Raleway', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 9.5pt;
+  line-height: 1.33;
+  color: var(--ink);
+  background: white;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  /* Loose widow/orphan control instead of hard page-break-after: avoid */
+  orphans: 3;
+  widows: 3;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Gabarito', 'Raleway', sans-serif;
+  color: var(--ink);
+  line-height: 1.15;
+  font-weight: 700;
+}
+
+/* Only the top-level (skill title) and major section H2s should avoid
+   being orphaned at the bottom of a page. Minor headings can flow. */
+h1, h2 { page-break-after: avoid; }
+
+/* H1 = skill / section title. The .skill-divider block above each skill
+   already enforces the page break; do NOT add another one here, otherwise
+   we double-break and leave half-empty pages. The README H1 still flows. */
+h1 {
+  font-size: 18pt;
+  letter-spacing: -0.02em;
+  margin-top: 0.3em;
+  margin-bottom: 0.3em;
+  padding-bottom: 0.2em;
+  border-bottom: 2px solid var(--majorelle);
+  color: var(--cool-black);
+}
+
+h2 {
+  font-size: 12.5pt;
+  margin-top: 0.55em;
+  margin-bottom: 0.2em;
+  color: var(--majorelle);
+}
+
+h3 {
+  font-size: 10.5pt;
+  margin-top: 0.4em;
+  margin-bottom: 0.15em;
+  color: var(--ink);
+}
+
+h4 {
+  font-size: 9.8pt;
+  margin-top: 0.3em;
+  margin-bottom: 0.1em;
+  color: var(--ink-2);
+}
+
+p { margin: 0.2em 0; }
+
+a {
+  color: var(--majorelle);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(118, 71, 221, 0.25);
+}
+
+strong { color: var(--cool-black); font-weight: 700; }
+em { color: var(--ink-2); }
+
+code {
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: var(--code-bg);
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+  color: var(--cool-black);
+  border: 1px solid rgba(118, 71, 221, 0.12);
+}
+
+pre {
+  background: var(--code-bg);
+  border: 1px solid rgba(118, 71, 221, 0.18);
+  border-left: 3px solid var(--majorelle);
+  border-radius: 4px;
+  padding: 0.4em 0.65em;
+  overflow-x: auto;
+  font-size: 7.8pt;
+  line-height: 1.28;
+  /* Allow code blocks to break across pages — page-break-inside: avoid was
+     pushing long blocks onto new pages and leaving big top-of-page gaps. */
+  margin: 0.3em 0;
+}
+pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.3em 0;
+  font-size: 8.5pt;
+}
+table th {
+  background: linear-gradient(135deg, var(--majorelle) 0%, var(--lavender) 100%);
+  color: white;
+  text-align: left;
+  font-weight: 600;
+  padding: 0.35em 0.55em;
+  font-family: 'Gabarito', sans-serif;
+}
+table td {
+  padding: 0.3em 0.55em;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+table tr:nth-child(even) td {
+  background: var(--table-stripe);
+}
+
+ul, ol {
+  margin: 0.2em 0;
+  padding-left: 1.15em;
+}
+li { margin: 0.05em 0; }
+li > p { margin: 0.05em 0; }
+li > ul, li > ol { margin: 0.05em 0; }
+
+blockquote {
+  border-left: 3px solid var(--pale-violet);
+  padding: 0.15em 0.8em;
+  margin: 0.3em 0;
+  color: var(--ink-2);
+  background: rgba(203, 140, 255, 0.06);
+}
+
+hr {
+  border: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--majorelle), var(--pale-violet), transparent);
+  margin: 0.8em 0;
+}
+
+/* Cover page */
+.cover-page {
+  height: 9.6in;
+  position: relative;
+  background: linear-gradient(135deg, var(--cool-black) 0%, #0a1d4a 50%, #1a2b4a 100%);
+  color: white;
+  margin: -0.45in -0.55in -0.55in -0.55in;
+  padding: 1.4in 0.9in 0.9in 0.9in;
+  page-break-after: always;
+  overflow: hidden;
+}
+.cover-page::before {
+  content: "";
+  position: absolute;
+  top: -200px; right: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(118, 71, 221, 0.4) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.cover-page::after {
+  content: "";
+  position: absolute;
+  bottom: -150px; left: -100px;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(203, 140, 255, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.cover-page h1 {
+  font-family: 'Gabarito', sans-serif;
+  font-size: 52pt;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.0;
+  color: white;
+  border: 0;
+  margin: 0.5em 0 0.25em 0;
+  position: relative;
+  z-index: 2;
+}
+.cover-eyebrow {
+  font-family: 'Gabarito', sans-serif;
+  font-size: 10pt;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: var(--pale-violet);
+  font-weight: 600;
+  position: relative;
+  z-index: 2;
+}
+.cover-sub {
+  font-size: 13pt;
+  font-weight: 400;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 6.5in;
+  margin-top: 0.7em;
+  position: relative;
+  z-index: 2;
+}
+.cover-meta {
+  font-family: 'Gabarito', sans-serif;
+  font-size: 13pt;
+  color: var(--wheat);
+  margin-top: 1.5em;
+  letter-spacing: 0.02em;
+  position: relative;
+  z-index: 2;
+}
+.cover-meta strong { color: var(--wheat); }
+.cover-footer {
+  position: absolute;
+  bottom: 0.65in;
+  left: 0.9in;
+  right: 0.9in;
+  font-size: 8.5pt;
+  color: rgba(255, 255, 255, 0.55);
+  border-top: 1px solid rgba(118, 71, 221, 0.4);
+  padding-top: 0.5em;
+  z-index: 2;
+}
+
+/* Skill section dividers — ONLY thing that forces page breaks.
+   No padding-top — the H1 immediately after has its own margin. */
+.skill-divider {
+  page-break-before: always;
+}
+.tier-banner {
+  display: inline-block;
+  font-family: 'Gabarito', sans-serif;
+  font-size: 8.5pt;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 600;
+  color: var(--majorelle);
+  background: rgba(118, 71, 221, 0.08);
+  border: 1px solid rgba(118, 71, 221, 0.3);
+  border-radius: 4px;
+  padding: 0.18em 0.6em;
+  margin-bottom: 0.25em;
+}
+
+/* Frontmatter block at end of each skill */
+.frontmatter {
+  background: rgba(118, 71, 221, 0.04);
+  border: 1px solid rgba(118, 71, 221, 0.18);
+  border-radius: 5px;
+  padding: 0.4em 0.7em;
+  margin: 0.5em 0 0.5em 0;
+  font-size: 8.5pt;
+  page-break-inside: avoid;
+  line-height: 1.35;
+}
+.frontmatter dl { margin: 0; }
+.frontmatter dt {
+  font-family: 'Gabarito', sans-serif;
+  font-weight: 600;
+  color: var(--majorelle);
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.2em;
+}
+.frontmatter dd {
+  margin: 0 0 0.2em 0;
+  color: var(--ink-2);
+}
+
+/* Pandoc TOC compactness */
+nav#TOC {
+  font-size: 9.5pt;
+  line-height: 1.35;
+  page-break-after: always;
+}
+nav#TOC ul { padding-left: 1em; margin: 0.15em 0; }
+nav#TOC li { margin: 0.05em 0; }
+nav#TOC > ul > li { margin: 0.15em 0; }
