@@ -1,6 +1,6 @@
 # Catalog validation log
 
-Last run: `2026-06-20T15:46:25.123Z`
+Last run: `2026-06-22T18:13:24.958Z`
 
 | Metric | Value |
 |---|---|
