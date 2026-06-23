@@ -10,9 +10,9 @@
     {
       "name": "firefly-services",
       "source": "./plugins/firefly-services",
-      "description": "13 skills covering Firefly Services auth, generation, custom models, expand/fill, video, Photoshop API, and Lightroom API."
+      "description": "19 skills covering Firefly Services auth, image and video generation, custom models, expand/fill, generate-similar, Photoshop API, Lightroom API, storage references, rate limits, cost optimization, batch pipelines, and troubleshooting."
     }
   ],
   "license": "Apache-2.0",
-  "repository": "https://github.com/focusgts/firefly-services-skills"
+  "repository": "https://github.com/Focus-GTS/firefly-services-skills"
 }

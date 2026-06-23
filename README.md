@@ -67,7 +67,7 @@ End-to-end blueprints that stitch the foundation, generative, and editing skills
 ### Claude Code (plugin marketplace)
 
 ```bash
-/plugin marketplace add focusgts/firefly-services-skills
+/plugin marketplace add Focus-GTS/firefly-services-skills
 /plugin install firefly-services@firefly-services-skills
 ```
 
@@ -76,7 +76,7 @@ End-to-end blueprints that stitch the foundation, generative, and editing skills
 Clone this repo and copy the plugin into your local Claude Code skills directory:
 
 ```bash
-git clone https://github.com/focusgts/firefly-services-skills.git
+git clone https://github.com/Focus-GTS/firefly-services-skills.git
 cp -R firefly-services-skills/plugins/firefly-services ~/.claude/skills/
 ```
 
