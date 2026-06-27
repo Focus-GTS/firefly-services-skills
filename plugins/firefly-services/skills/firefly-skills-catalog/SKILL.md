@@ -362,7 +362,7 @@ To add a new track, edit `config/planning-tracks.yml` and push. To add a new ski
 
 ## Provenance
 
-- Catalog generated: `2026-06-26T16:19:48.202Z`
+- Catalog generated: `2026-06-27T15:17:25.511Z`
 - Total skills indexed: 18 (plus this meta-skill)
 - Source: `scripts/catalog/build-catalog.ts`
 - Planning tracks source: `config/planning-tracks.yml`
