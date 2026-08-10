@@ -36,10 +36,10 @@ Got an error response?
 │   ├── 401 → Authentication problem      → §1
 │   ├── 403 → Authorization / entitlement → §2
 │   ├── 429 → Rate limit                  → §3 (and use firefly-services-rate-limits)
-│   ├── 400 → Generic bad request         → §4
+│   ├── 400 → Malformed request / schema  → §4
 │   ├── 404 → Resource not found          → §5
-│   ├── 422 → Content safety OR schema
-│   │         validation_error            → §6
+│   ├── 422 → Content safety OR semantic/
+│   │         reference validation        → §6
 │   ├── 500 → Adobe-side                  → §7
 │   ├── 502/503/504 → Transient infra     → §7
 │   └── timeout (no response)             → §7
@@ -73,7 +73,7 @@ or:
 | 1.4 | Check that `X-Api-Key: $FIREFLY_SERVICES_CLIENT_ID` is also sent | Firefly requires *both* headers |
 | 1.5 | Verify the token was issued with `firefly_api` AND `ff_apis` scopes | Re-issue with correct scope string |
 
-The `X-Api-Key` header is required and easily forgotten. Firefly returns 401 (not 400) when it is missing, which is misleading.
+The `X-Api-Key` header is required and easily forgotten. A valid token without it returns **403** `{"error_code": "403000", "message": "Api Key is required"}`, while a bad token returns **401** `{"error_code": "401013", "message": "Oauth token is not valid"}` (both live-verified 2026-08-10). Note the auth layer speaks numeric error codes; the API-level validation in §4/§6 speaks symbolic ones.
 
 ## §2 — 403 Forbidden
 
@@ -113,7 +113,7 @@ High-volume V1 builds typically hit the 4-RPM ceiling within the first sprint. T
 
 ## §4 — 400 Bad Request
 
-The Firefly API's 400 is the *generic* malformed-request response — the body is simply `{"error_code": "bad_request"}`. Field-level schema violations (an invalid enum value, an unsupported size, a missing required field) come back as **422** with `error_code: "validation_error"` and a `validation_errors[]` array pinpointing the offending field — see §6.
+Field-level schema violations (an invalid enum value, an unsupported size, an out-of-range strength, a malformed UUID) come back as **400** with `error_code: "bad_request"` — either a descriptive `message` alone or a `validation_errors[]` array pinpointing the offending field (live-verified 2026-08-10). **422** `validation_error` is reserved for semantic and reference problems the schema can't catch — an unreachable pre-signed URL, an invalid storage object, an inapplicable `x-model-version` — see §6.
 
 **Common request-validation signatures (surface as 400 `bad_request` or 422 `validation_error`):**
 
@@ -122,7 +122,7 @@ The Firefly API's 400 is the *generic* malformed-request response — the body i
 | `validation_errors[]` entry on `size.width`/`size.height` | Width/height not in the allowed list | Use one of the supported `image3` output sizes: 2048x2048 and 1024x1024 (square 1:1), 2304x1792 (landscape 4:3), 1792x2304 (portrait 3:4), 2688x1536 (widescreen 16:9), 1344x768 (7:4), 1152x896 (9:7), 896x1152 (7:9) — see endpoint docs |
 | `validation_errors[]` entry on `prompt` | Empty or whitespace-only prompt | Validate prompt length client-side |
 | `"message": "Invalid style reference"` | Reference image was not uploaded via the storage endpoint | See `firefly-services-storage-refs` |
-| `validation_errors[].loc: ["body", "contentClass"]`, msg `"value is not a valid enumeration member; permitted: 'photo', 'art'"` | `contentClass` is `photo` or `art` only (V3); anything else is rejected | Set explicitly — this one returns as **422** `validation_error` |
+| `validation_errors[].loc: ["body", "contentClass"]`, msg `"value is not a valid enumeration member; permitted: 'photo', 'art'"` | `contentClass` is `photo` or `art` only (V3); anything else is rejected | Set explicitly — the schema-violation family returns **400** `bad_request` with `validation_errors[]` |
 
 When debugging 400s and 422s, log the entire request body and compare to the latest endpoint reference. The schema evolves between V2 and V3.
 

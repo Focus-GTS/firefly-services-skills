@@ -41,7 +41,7 @@ Firefly Services rate limits are per-credential, per-endpoint, with both per-sec
 | Lightroom API | ~10 RPM | Higher than Firefly |
 | Token endpoint (IMS) | Effectively unlimited | Cache aggressively anyway |
 
-Numbers shift over time and can be raised per-customer via Adobe account management. Verify current limits in the [Technical Usage Notes](https://developer.adobe.com/firefly-services/docs/firefly-api/guides/concepts/usage-notes/). Adobe officially documents only the `429` status with a `Retry-After` header for rate limiting; informational headers such as `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` may be present on some responses but are not reliably documented — do not depend on them.
+Numbers shift over time and can be raised per-customer via Adobe account management. Verify current limits in the [Technical Usage Notes](https://developer.adobe.com/firefly-services/docs/firefly-api/guides/concepts/usage-notes/). Adobe officially documents only the `429` status with a `Retry-After` header for rate limiting; informational headers such as `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` may be present on some responses but are not reliably documented — do not depend on them. (Live check 2026-08-10 on a sandbox credential: an 8-call generate burst completed with zero 429s and no rate-limit headers on any response — enforcement is org-specific and invisible until it triggers, so treat documented defaults as planning numbers and build 429-reactive backoff rather than header-driven throttling.)
 
 ## The Production Strategy
 

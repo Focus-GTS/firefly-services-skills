@@ -120,7 +120,7 @@ Full request shape with all common fields:
 | 1792×2304 | Portrait (3:4) |
 | 896×1152 | Portrait (7:9) |
 
-Other dimensions are rejected with a 422 `validation_error` (see `firefly-services-troubleshoot` §6). Pick from this list, or generate at the nearest match and crop in post.
+Other dimensions are rejected with a 400 `bad_request` whose message enumerates the currently valid sizes — live-verified 2026-08-10: `Size must be one of {(2688, 1536), (1344, 756), (896, 1152), (1344, 768), (2688, 1512), (2304, 1792), (1152, 896), (2048, 2048), (1792, 2304), (1024, 1024)}`. Pick from this list, or generate at the nearest match and crop in post.
 
 ### Content class
 

@@ -26,3 +26,7 @@ build/_combined.md
 build/firefly-services-skills.html
 build/*.pdf
 
+
+# Local agent tooling state — never commit
+.swarm/
+**/.swarm/

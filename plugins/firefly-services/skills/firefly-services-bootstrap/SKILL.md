@@ -184,7 +184,7 @@ Export the token:
 export FIREFLY_SERVICES_ACCESS_TOKEN=<access_token>
 ```
 
-If the curl call returns `invalid_client`, the `client_secret` is wrong. If it returns `unauthorized_client`, the workspace is not subscribed to the Firefly Services API (Step 3 was skipped or incomplete). If it returns a 200 but with an empty `access_token`, the scope list is wrong — the `firefly_api` and `ff_apis` scopes are both required even though they look redundant.
+If the curl call returns `invalid_client`, the `client_secret` is wrong. If it returns `unauthorized_client`, the workspace is not subscribed to the Firefly Services API (Step 3 was skipped or incomplete). Scope-list mistakes are sneaky: IMS silently ignores unrecognized scope names (live-verified — a bogus scope still returns a normal-looking token), so a typo yields a token that *looks* fine but lacks the entitlement and fails later at the API with 401/403. Request the full scope set, and remember `firefly_api` and `ff_apis` are both required even though they look redundant.
 
 ## Step 7 — Install the SDK and run the smoke-test call
 
@@ -246,7 +246,7 @@ If any of these fails, stop and resolve before declaring the engagement live. A 
 - **`aio` CLI not installed:** Run `npm install -g @adobe/aio-cli`. Do not install via Homebrew — the Adobe-maintained npm package is the only supported distribution.
 - **Multiple IMS orgs and the wrong one is selected:** Every `aio console *` command accepts `--orgId <id>`. Pass it explicitly when uncertain rather than relying on the default selection.
 - **`workspace api add` returns "product profile required":** The Firefly entitlement is profile-gated. Get the profile name from the customer's org admin and pass `--license-config FireflyAPI=<ProfileName>`.
-- **Token returns 200 but `access_token` is empty:** Almost always a scope list issue. The full scope set is `openid,AdobeID,session,additional_info,read_organizations,firefly_api,ff_apis,firefly_enterprise,creative_sdk` (`firefly_enterprise` and `creative_sdk` cover Custom Models and Photoshop/Lightroom). Yes both `firefly_api` and `ff_apis` — the naming is historical.
+- **Token succeeds but API calls fail 401/403:** Check the scope list first. IMS silently drops unrecognized scope names (verified live), so a misspelled scope still yields a token — minus the entitlement. The full scope set is `openid,AdobeID,session,additional_info,read_organizations,firefly_api,ff_apis,firefly_enterprise,creative_sdk` (`firefly_enterprise` and `creative_sdk` cover Custom Models and Photoshop/Lightroom). Yes both `firefly_api` and `ff_apis` — the naming is historical.
 - **Smoke test returns 401 after a successful token call:** The token is valid but does not include the Firefly Services entitlement. Check that the project's IMS org and the credential's owning org match.
 - **First API call returns 403 with no detail:** Wait 5 minutes. IMS credential propagation has a tail of up to ~5 minutes after issuance.
 - **JWT credentials still in use:** Migrate immediately. JWT was end-of-life on June 30, 2025 and certificates expire by March 1, 2026. Mixed credential types are unsupported.

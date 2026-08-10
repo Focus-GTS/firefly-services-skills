@@ -93,7 +93,7 @@ Send the `x-model-version: video1_standard` header with the request to select th
 |---|---|
 | `prompt` | The most-important field; see prompt patterns below |
 | `negativePrompt` | Optional — characteristics the model should steer away from (e.g. "NO people, NO trees") |
-| `sizes` | **Array** of `{width, height}`. Supported sizes: 1920×1080 (16:9), 1080×1920 (9:16), 960×960 (1:1), 1280×720 (16:9), 720×1280 (9:16) |
+| `sizes` | **Array** of `{width, height}`. Safe validated set: 1920×1080 (16:9), 1080×1920 (9:16), 960×960 (1:1), 1280×720 (16:9), 720×1280 (9:16). The API accepts sizes beyond this list at submission (a 1080×1080 job was submitted and completed successfully in a live check, 2026-08-10) — treat the list as the tested set, not a hard API limit |
 | `seeds` | Array; currently 1 seed supported. Same seed = same output, useful for reproducibility |
 | `bitRateFactor` | Optional int 0-63, default 18. Encoding constant rate factor: 0 = lossless/largest file, 63 = smallest file/lowest quality. Suggested range 17-23 — your lever for the file-size planning below |
 | `image` | Optional — `{"conditions": [...]}`, an array of keyframes. Each condition **requires** both `source` (`uploadId`, `url`, or `creativeCloudFileId`) and `placement` (`{"position": 0}` = first frame, `{"position": 1}` = last frame) |
@@ -280,7 +280,7 @@ A Firefly Video pipeline is production-ready when:
 - **Output has incoherent or "morphing" subjects:** Prompt is too complex. Simplify to one subject + one motion.
 - **Output is shorter than expected:** Adobe may clip if temporal coherence is breaking down. Reduce motion complexity.
 - **Job stuck for 10+ minutes:** Cancel and resubmit. Typical jobs finish in 1-3 minutes; long stalls are rare but happen during peak load.
-- **`sizes` rejected:** `sizes` must be an **array** of `{width, height}` objects. Use the published sizes (1920×1080, 1080×1920, 960×960, 1280×720, 720×1280) — note the square size is 960×960, not 1080×1080. Custom dimensions not supported.
+- **`sizes` rejected:** `sizes` must be an **array** of `{width, height}` objects — the most common rejection is passing a single object instead of an array. Stick to the tested set (1920×1080, 1080×1920, 960×960, 1280×720, 720×1280) for predictable results; the API has accepted and completed other dimensions in live checks (e.g. 1080×1080), so an unusual size is not automatically the cause of a rejection.
 - **Request runs against the wrong model:** Ensure the `x-model-version: video1_standard` header is present on the submission.
 - **Content safety filter triggers on a clean prompt:** Synthetic video has stricter safety filters than image. Strip any reference to people, brands, or sensitive themes and try again.
 - **Image-to-video output ignores the source:** Source image may not match the target aspect ratio. Pre-process to the exact target size.

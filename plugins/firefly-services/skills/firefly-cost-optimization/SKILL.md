@@ -136,12 +136,12 @@ Audit one week of DLQ contents. Any class that should not have been retried but 
 
 ## Step 4 — Seed Reuse for Deterministic Regeneration
 
-The `seeds` parameter on Generate Image (an array of 1-4 unique integers) lets you reproduce an exact output. For cost control, this matters in two scenarios:
+The `seeds` parameter on Generate Image (an array of 1-4 unique integers) biases generation toward a consistent composition. **It does not guarantee byte-identical reproduction** — a live check (2026-08-10) comparing two calls with identical prompt, seed, and size returned different image bytes. For cost control, seeds matter in two scenarios:
 
 | Scenario | Pattern |
 |---|---|
 | Design iteration ("almost right — generate again with this small tweak") | Pass the original seed; tweak only the prompt fragment that changed. Result is much closer to the original. |
-| Reproducibility for legal/audit | Store the seed with every generated asset; can regenerate the exact same pixels months later if challenged |
+| Reproducibility for legal/audit | Store the seed *and archive the output asset itself* — the seed documents provenance, but regeneration is not pixel-exact, so the stored artifact is the audit record |
 
 Without seed reuse, "make it slightly different" requires generating multiple new variants and picking. With seed reuse, one targeted generation often suffices.
 

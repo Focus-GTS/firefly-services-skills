@@ -13,7 +13,7 @@ metadata:
 
 Use brand-aligned generative models. Custom Models capture distinctive aesthetics, characters, objects, or compositional patterns from 10-30 reference images and apply them to new generations via `customModelId`. This is the production pattern for brand-guardrail generative workflows.
 
-> **Important — training happens in the Firefly web UI, not the API.** There is no public REST API for training, listing, or deleting custom models. Models are **trained interactively in the Firefly web app** (firefly.adobe.com). The Firefly Services API only **consumes** a trained model at generation time via `customModelId` plus the `x-model-version: image3_custom` header. This skill covers preparing data, training in the web UI, finding the model's asset ID, and generating with it.
+> **Important — training happens in the Firefly web UI, not the API.** There is no public REST API for training or deleting custom models — but listing exists: `GET /v3/custom-models` enumerates the org's models (live-verified 2026-08-10; returns `{"custom_models": [...], "total_count": n}` with pagination links). Models are **trained interactively in the Firefly web app** (firefly.adobe.com). Entitlement tip: on a credential whose org has no custom-model access, the API rejects the header outright — 422 `Invalid x-model-version: image3_custom. Must be one of: ['image3', 'image3_fast']` — which makes a one-call entitlement check. The Firefly Services API only **consumes** a trained model at generation time via `customModelId` plus the `x-model-version: image3_custom` header. This skill covers preparing data, training in the web UI, finding the model's asset ID, and generating with it.
 
 ## When to Use This Skill
 
@@ -122,7 +122,7 @@ The `x-model-version: image3_custom` header is **required** — without it, the 
 
 ## Step 5 — Manage Models
 
-Listing, inspecting, retraining, and deleting custom models is done in the Firefly web app — there is no public management REST API. Maintain your own registry mapping model name → asset ID (`customModelId`) → version so generation services can look up the right ID. Treat asset IDs as long-lived; deleting a model in the web app cannot be undone, so confirm before removing one that is in production.
+Retraining and deleting custom models is done in the Firefly web app; enumerate them programmatically with `GET /v3/custom-models` (live-verified). Still maintain your own registry mapping model name → asset ID (`customModelId`) → version so generation services can look up the right ID. Treat asset IDs as long-lived; deleting a model in the web app cannot be undone, so confirm before removing one that is in production.
 
 ## Step 6 — Retraining Cadence
 
