@@ -1,6 +1,6 @@
 ---
 name: firefly-services-auth
-description: Production-grade OAuth Server-to-Server authentication for Adobe Firefly Services — token retrieval, refresh-before-expiry, scope selection, multi-tenant credential isolation, and the JWT-to-OAuth migration path. Use whenever the user needs to obtain or refresh a Firefly Services access token, mentions "token expired", "401 Unauthorized", "auth", "IMS", "scopes", "client credentials", "S2S", "Server-to-Server", "JWT migration", or wires authentication into a service that calls `firefly-api.adobe.io` or `image.adobe.io`. Also handles JWT deprecation — JWT reached end-of-life June 30, 2025 and all certificates expire by March 1, 2026; this skill covers the migration path. Do NOT use for first-time project setup; use `firefly-services-bootstrap` instead.
+description: Production-grade OAuth Server-to-Server authentication for Adobe Firefly Services — token retrieval, refresh-before-expiry, scope selection, multi-tenant credential isolation, and the JWT-to-OAuth migration path. Use whenever the user needs to obtain or refresh a Firefly Services access token, mentions "token expired", "401 Unauthorized", "auth", "IMS", "scopes", "client credentials", "S2S", "Server-to-Server", "JWT migration", or wires authentication into a service that calls `firefly-api.adobe.io` or `image.adobe.io`. Also handles JWT deprecation — JWT reached end-of-life June 30, 2025 and all certificates expired March 1, 2026; any remaining JWT integration is already broken and this skill covers the rebuild path. Do NOT use for first-time project setup; use `firefly-services-bootstrap` instead.
 license: Apache-2.0
 compatibility: Requires OAuth Server-to-Server credentials issued via Adobe Developer Console. Node 18+ for the SDK path. `curl` 7.x+ for the bash path. Network access to `ims-na1.adobelogin.com`.
 allowed-tools: Bash(curl:*) Bash(node:*) Bash(npm:*) Read Write Edit
@@ -31,7 +31,7 @@ Do **NOT** use this skill when:
 
 ## Critical: JWT is Dead
 
-Service Account (JWT) credentials reached **end-of-life on June 30, 2025**. They continue to function only until their issuing certificate expires. The final expiry deadline is **March 1, 2026**. After that date, every JWT-based integration breaks.
+Service Account (JWT) credentials reached **end-of-life on June 30, 2025**. They continued to function only until their issuing certificate expired, and the final certificate expiry was **March 1, 2026**. That date has passed — every JWT-based integration is now non-functional, and there is no path to renew a JWT certificate.
 
 If you see code like this anywhere, it must be migrated:
 
@@ -57,18 +57,20 @@ The scope string in the token request controls what the token can access. Over-s
 
 | Scope | Required for |
 |---|---|
-| `openid` | Always required for OAuth |
-| `AdobeID` | Always required |
-| `session` | Always required |
-| `additional_info` | Always required |
-| `read_organizations` | Always required for server-to-server |
+| `openid` | Recommended baseline (Adobe getting-started default) |
+| `AdobeID` | Recommended baseline (Adobe getting-started default) |
+| `session` | Recommended baseline (Adobe getting-started default) |
+| `additional_info` | Recommended baseline (Adobe getting-started default) |
+| `read_organizations` | Recommended baseline for server-to-server; SDK-documented requirement for Photoshop/Lightroom |
 | `firefly_api` | Firefly v1 / legacy endpoints |
 | `ff_apis` | Firefly v2 / v3 endpoints (most current workloads) |
 | `firefly_enterprise` | Custom Models API |
-| `creative_sdk` | Photoshop API, Lightroom API |
+| `creative_sdk` | Legacy Photoshop/Lightroom scope — the SDK documents `openid, AdobeID, read_organizations` as the current requirement; including `creative_sdk` is harmless |
 | `AdobeID,additional_info.projectedProductContext` | Some product-profile-gated services |
 
-**Always request both `firefly_api` and `ff_apis`** when uncertain. The naming is historical and the cost of including both is zero. Include `firefly_enterprise` only for projects using Custom Models. Include `creative_sdk` for Photoshop/Lightroom workloads.
+The SDK-documented per-API minimums are narrower than the baseline: Firefly is `firefly_api, ff_apis`; Photoshop and Lightroom are `openid, AdobeID, read_organizations`. The baseline rows are Adobe's getting-started default and are safe to include.
+
+**Always request both `firefly_api` and `ff_apis`** when uncertain. The naming is historical and the cost of including both is zero. Include `firefly_enterprise` only for projects using Custom Models. For Photoshop/Lightroom workloads, `openid, AdobeID, read_organizations` covers the SDK-documented requirement; `creative_sdk` is a legacy scope that remains harmless to include.
 
 The canonical scope string for an FDE engagement that uses Firefly + Photoshop + custom models:
 
@@ -102,17 +104,23 @@ Capture the token and `expires_in` together — the refresh-before-expiry patter
 ```js
 import { ServerToServerTokenProvider } from '@adobe/firefly-services-common-apis';
 
-const tokenProvider = new ServerToServerTokenProvider({
-  clientId: process.env.FIREFLY_SERVICES_CLIENT_ID,
-  clientSecret: process.env.FIREFLY_SERVICES_CLIENT_SECRET,
-  // scopes is a single comma-separated string, not an array
-  scopes: 'openid,AdobeID,session,additional_info,read_organizations,firefly_api,ff_apis',
-});
+const tokenProvider = new ServerToServerTokenProvider(
+  {
+    clientId: process.env.FIREFLY_SERVICES_CLIENT_ID,
+    clientSecret: process.env.FIREFLY_SERVICES_CLIENT_SECRET,
+    // scopes is a single comma-separated string, not an array
+    scopes: 'openid,AdobeID,session,additional_info,read_organizations,firefly_api,ff_apis',
+  },
+  // autoRefresh defaults to false, and with it off getToken() throws until
+  // you call authenticate() yourself — pass true so getToken() fetches the
+  // initial token for you.
+  { autoRefresh: true },
+);
 
 const accessToken = await tokenProvider.getToken();
 ```
 
-`ServerToServerTokenProvider` caches the token in memory. When `autoRefresh` is enabled, it fetches a new token after the cached one has expired (there is no pre-expiry safety-buffer logic in the SDK). This is the production pattern — do not reimplement. If you need proactive refresh *before* expiry, use the cache pattern in Step 3.
+`ServerToServerTokenProvider` caches the token in memory. With `autoRefresh: true`, `getToken()` fetches the initial token automatically. Note the shipped behavior: once a token is cached, `getToken()` returns the cached value without re-fetching — a token held past its ~24h lifetime is returned as-is. This makes the SDK path a good fit for scripts and short-lived jobs. For a long-running service, use the refresh-before-expiry cache in Step 3, which owns the token lifecycle explicitly.
 
 ## Step 3 — Refresh Before Expiry (Production Pattern)
 
@@ -187,7 +195,7 @@ In multi-tenant FDE deployments (multiple enterprise customers all served by the
 
 ## JWT → OAuth Migration
 
-If a project still uses JWT credentials, migrate before March 1, 2026 or the project breaks.
+If a project still carries JWT credentials, it is already broken — the final certificate expiry was March 1, 2026. The migration below is a rebuild of a dead integration, not a live cutover: there is no working JWT path to run in parallel.
 
 ### Step A — Provision OAuth S2S credentials in the same workspace
 
@@ -200,7 +208,7 @@ aio console workspace credentials create \
   --json
 ```
 
-You can hold both JWT and OAuth credentials in the same workspace temporarily during cutover.
+The expired JWT credential can coexist in the same workspace while you stand up OAuth — it no longer functions, so there is no traffic to cut over. Revoke it once the OAuth path is verified (Step C).
 
 ### Step B — Replace JWT-signing code with OAuth client-credentials
 

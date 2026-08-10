@@ -2,7 +2,7 @@
 name: firefly-generate-image-v3-async
 description: Generate images with the Adobe Firefly V3 asynchronous API — job submission, status polling, webhook callbacks, prompt structure, content class, style and structure references, seed control, multi-variation results, and the migration from V2 sync to V3 async. Use whenever the user wants to "generate an image with Firefly", "text-to-image", "Firefly V3", "async generate", "polling", "jobId", "statusUrl", or upgrades from V2 sync. Returns the production pattern for the highest-volume Firefly workload — including the polling cadence that does not get rate-limited and the webhook pattern that scales to thousands of concurrent jobs.
 license: Apache-2.0
-compatibility: Requires Firefly Services credentials and `firefly_api`, `ff_apis` scopes. V3 generation runs at `firefly-api.adobe.io/v3/images/generate` and returns an async job (jobId + statusUrl). Node 18+ or any HTTP client with retry support.
+compatibility: Requires Firefly Services credentials and `firefly_api`, `ff_apis` scopes. Async V3 generation runs at `firefly-api.adobe.io/v3/images/generate-async` and returns an async job (jobId + statusUrl); the synchronous variant is `/v3/images/generate`. Node 18+ or any HTTP client with retry support.
 allowed-tools: Bash(curl:*) Bash(jq:*) Read Write Edit
 metadata:
   version: "1.0.0"
@@ -11,13 +11,13 @@ metadata:
 
 # Firefly Generate Image — V3 Async
 
-The production pattern for text-to-image generation with Adobe Firefly's V3 asynchronous API. V3 async is the right shape for every workload above one-off interactive use. The synchronous V2 endpoint is still available but its 30-second timeout and per-request blocking make it unsuitable for production volume.
+The production pattern for text-to-image generation with Adobe Firefly's V3 asynchronous API (`/v3/images/generate-async`). V3 async is the right shape for every workload above one-off interactive use. The synchronous V3 endpoint (`/v3/images/generate`) is still available but its per-request blocking makes it unsuitable for production volume.
 
 ## When to Use This Skill
 
 Use this skill when:
 - Generating images from text prompts at any production volume
-- Migrating from V2 sync (`/v2/images/generate`) to V3 async (`/v3/images/generate`)
+- Migrating from the synchronous endpoint (`/v3/images/generate`) to V3 async (`/v3/images/generate-async`)
 - Building a campaign pipeline, banner-at-scale system, or batch generator
 - Adding style or structure references to a generate call
 - Designing a webhook-based generation pipeline
@@ -29,7 +29,7 @@ Do **NOT** use this skill when:
 
 ## Sync vs Async — When to Use Which
 
-| Property | V2 sync (`/v2/images/generate`) | V3 async (`/v3/images/generate`) |
+| Property | V3 sync (`/v3/images/generate`) | V3 async (`/v3/images/generate-async`) |
 |---|---|---|
 | Latency to first byte | 10-30s (blocking) | ~200ms (returns jobId) |
 | Time to result | Same | Same |
@@ -39,12 +39,12 @@ Do **NOT** use this skill when:
 | Recommended for production | No | Yes |
 | Recommended for one-shot CLI | Acceptable | Acceptable |
 
-**Default to V3 async for everything.** The only acceptable reason to use V2 sync is a one-shot script where the user is watching the terminal.
+**Default to V3 async for everything.** The only acceptable reason to use sync is a one-shot script where the user is watching the terminal. The sync endpoint returns `200` with the finished `{size, outputs[]}` body directly — no jobId. The async variant (`/v3/images/generate-async`) is documented in Adobe's [async API guide](https://developer.adobe.com/firefly-services/docs/firefly-api/guides/how-tos/using-async-apis/); the bundled `@adobe/firefly-apis` SDK spec covers only the sync path, so use raw HTTP for async submission.
 
 ## The Async Workflow
 
 ```
-1. POST /v3/images/generate  →  { jobId, statusUrl, cancelUrl }
+1. POST /v3/images/generate-async  →  { jobId, statusUrl, cancelUrl }
 2. Either:
    a. Poll statusUrl every 1-2s until status === "succeeded" | "failed"
    b. OR provide a webhook callback URL — Firefly calls it on completion
@@ -57,7 +57,7 @@ Do **NOT** use this skill when:
 Minimum required request:
 
 ```bash
-curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/generate' \
+curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/generate-async' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-Api-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \
@@ -120,7 +120,7 @@ Full request shape with all common fields:
 | 1792×2304 | Portrait (3:4) |
 | 896×1152 | Portrait (7:9) |
 
-Other dimensions are rejected with a 400. Pick from this list, or generate at the nearest match and crop in post.
+Other dimensions are rejected with a 422 `validation_error` (see `firefly-services-troubleshoot` §6). Pick from this list, or generate at the nearest match and crop in post.
 
 ### Content class
 
@@ -129,12 +129,12 @@ Other dimensions are rejected with a 400. Pick from this list, or generate at th
 | `photo` | Photorealistic output — products, scenes, people |
 | `art` | Stylized output — illustrations, paintings, designs |
 
-Defaults to a balanced output; setting explicitly produces sharper results in the chosen direction.
+If omitted, Firefly auto-detects the content class from the prompt; setting it explicitly produces sharper results in the chosen direction.
 
 ### Variations and seeds
 
 - `numVariations`: 1-4. Production typically uses 2-4 to give downstream selection logic options.
-- `seeds`: array of integers. Same seed + same prompt + same model = deterministic output. Use seeds for A/B testing or reproducibility audits.
+- `seeds`: array of integers. Same seed + same prompt + same model = deterministic output. Use seeds for A/B testing or reproducibility audits. If provided alongside `numVariations`, the seed count must equal `numVariations`.
 
 ## Step 3 — Poll for Completion
 
@@ -261,7 +261,7 @@ Never store the raw Firefly URL long-term. Always re-host in your own storage.
 
 ## Style and Structure References
 
-Both V3 image generation supports two reference types:
+V3 image generation supports two reference mechanisms — style (via presets and/or an image reference) and structure (via an image reference):
 
 | Reference | Effect |
 |---|---|
@@ -287,24 +287,29 @@ Combine for fine control:
 }
 ```
 
-`strength` 0-100. Higher = stronger influence. Start at 50 and tune.
+`strength`: structure accepts 0-100; style accepts 1-100 (0 is excluded). Higher = stronger influence. Start at 50 and tune.
 
 The reference image must be a valid storage reference — see `firefly-services-storage-refs`.
 
 ## Custom Models
 
-To generate with a custom-trained model:
+To generate with a custom-trained model, pass `customModelId` in the body **and** send the `x-model-version: image3_custom` header:
 
-```json
-{
-  "prompt": "an icon of a key in our brand style",
-  "customModelId": "00000000-0000-0000-0000-000000000000",
-  "contentClass": "art",
-  "size": {"width": 1024, "height": 1024}
-}
+```bash
+curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/generate-async' \
+  -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
+  -H "X-Api-Key: $FIREFLY_SERVICES_CLIENT_ID" \
+  -H 'x-model-version: image3_custom' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "prompt": "an icon of a key in our brand style",
+    "customModelId": "00000000-0000-0000-0000-000000000000",
+    "contentClass": "art",
+    "size": {"width": 1024, "height": 1024}
+  }'
 ```
 
-Custom model IDs come from the custom-model training workflow — see `firefly-custom-models`.
+The `x-model-version: image3_custom` header is required — without it, the request runs against the base Firefly model and `customModelId` is ignored, so you get base-model output with no error. Custom model IDs come from the custom-model training workflow — see `firefly-custom-models`.
 
 ## Production Patterns
 
@@ -320,7 +325,7 @@ For >50 calls, use the SQS / Lambda / Token-Bucket pattern from `firefly-service
 
 For campaigns where you want choice:
 
-1. Submit with `numVariations: 4` and 2-4 different seeds
+1. Submit with `numVariations: 4` and exactly 4 seeds (seed count must equal `numVariations`)
 2. Persist all 4 outputs to your bucket
 3. Downstream selection logic (human or automated) picks 1
 4. Audit which combinations win for future prompt tuning

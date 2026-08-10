@@ -1,8 +1,8 @@
 ---
 name: firefly-services-storage-refs
-description: Asset storage and reference patterns for Adobe Firefly Services — Upload Endpoint, pre-signed URLs (S3/Azure/Dropbox/GCS), input source references for generative-fill / expand / similar / Photoshop / Lightroom, output destination references, pre-signed URL expiry, and the producer/consumer split for storage refs in queue-fronted workloads. Use whenever the user mentions "storage reference", "uploadId", "image ID", "pre-signed URL", "InvalidStorageReference", "how do I pass an image to Firefly", "S3 bucket", "Azure blob", or hits a 400312 error. Covers both the Firefly Upload Endpoint (returns an image ID) and the pre-signed-URL pattern (read from your own bucket).
+description: Asset storage and reference patterns for Adobe Firefly Services — Upload Endpoint, pre-signed URLs (S3/Azure/Dropbox), input source references for generative-fill / expand / similar / Photoshop / Lightroom, output destination references, pre-signed URL expiry, and the producer/consumer split for storage refs in queue-fronted workloads. Use whenever the user mentions "storage reference", "uploadId", "image ID", "pre-signed URL", "InvalidStorageReference", "how do I pass an image to Firefly", "S3 bucket", "Azure blob", or hits a 400312 error. Covers both the Firefly Upload Endpoint (returns an image ID) and the pre-signed-URL pattern (read from your own bucket).
 license: Apache-2.0
-compatibility: Works with all Firefly Services endpoints that accept image references — Generate Similar, Expand, Fill, Photoshop API (input/output), Lightroom API. Cloud storage support: AWS S3, Azure Blob, Dropbox, Google Cloud Storage (via signed URLs).
+compatibility: Works with all Firefly Services endpoints that accept image references — Generate Similar, Expand, Fill, Photoshop API (input/output), Lightroom API. Cloud storage support: AWS S3, Azure Blob, Dropbox (via signed URLs; Google Cloud Storage is not on the Firefly input-URL allowlist).
 allowed-tools: Bash(curl:*) Bash(aws:*) Bash(az:*) Read Write Edit
 metadata:
   version: "1.0.0"
@@ -37,8 +37,10 @@ The Firefly API has its own image-storage endpoint. You POST raw bytes, get back
 ```
 POST /v2/storage/image
   ↓ returns: {"images": [{"id": "abc-123..."}]}
-Use: {"source": {"uploadId": "abc-123..."}}
+Use: {"image": {"source": {"uploadId": "abc-123..."}}}
 ```
+
+Note the nesting: every Firefly V3 image endpoint (Generate Similar, Expand, Fill) wraps the source in a top-level `image` object — `{"image": {"source": {...}}}`, with Fill's mask alongside it as `image.mask`. A bare top-level `source` fails request validation.
 
 **Use this pattern when:**
 - The source image is in local storage (filesystem, in-memory)
@@ -55,11 +57,11 @@ Use: {"source": {"uploadId": "abc-123..."}}
 You upload to your own bucket, generate a pre-signed URL that grants read access, and Firefly fetches from it.
 
 ```
-Upload to S3/Azure/GCS (your storage)
+Upload to S3/Azure/Dropbox (your storage)
   ↓
 Generate pre-signed URL (your code)
   ↓
-Pass to Firefly: {"source": {"url": "https://your-bucket.s3..."}}
+Pass to Firefly: {"image": {"source": {"url": "https://your-bucket.s3..."}}}
 ```
 
 **Use this pattern when:**
@@ -68,7 +70,7 @@ Pass to Firefly: {"source": {"url": "https://your-bucket.s3..."}}
 - The same asset will be referenced by multiple Firefly calls (don't re-upload)
 - You need long-term retention of the source asset
 
-**Supported sources:** AWS S3, Azure Blob, Dropbox, Google Cloud Storage (with appropriate signing).
+**Supported sources:** the Firefly API validates the input-URL host against an allowlist — `amazonaws.com` (AWS S3), `windows.net` (Azure Blob), `dropboxusercontent.com` (Dropbox). Google Cloud Storage URLs (`storage.googleapis.com`) are not on the allowlist and are rejected; for assets in GCS, copy to an allowlisted store or use the Upload Endpoint (Pattern A).
 
 ## Pattern A — Upload Endpoint Workflow
 
@@ -125,7 +127,7 @@ curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/generate-similar' 
   -H "X-API-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \
   -d '{
-    "source": {"uploadId": "abc-123-def-456-..."},
+    "image": {"source": {"uploadId": "abc-123-def-456-..."}},
     "numVariations": 3
   }'
 ```
@@ -156,9 +158,6 @@ az storage blob upload \
   --container-name sources \
   --name input.png \
   --file ./input.png
-
-# Google Cloud Storage
-gcloud storage cp ./input.png gs://my-bucket/sources/input.png
 ```
 
 ### Step 2 — Generate a pre-signed URL
@@ -205,7 +204,7 @@ curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/generate-similar' 
   -H "X-API-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \
   -d '{
-    "source": {"url": "https://my-bucket.s3.amazonaws.com/sources/input.png?X-Amz-..."},
+    "image": {"source": {"url": "https://my-bucket.s3.amazonaws.com/sources/input.png?X-Amz-..."}},
     "numVariations": 3
   }'
 ```
@@ -215,18 +214,28 @@ curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/generate-similar' 
 Photoshop API and Lightroom API write **outputs back to a pre-signed URL** you provide. The pattern:
 
 1. Generate a pre-signed **PUT** URL on your own bucket
-2. Pass it as the `output.destination.url` field in the request
+2. Pass it as `outputs[].href` with the matching `outputs[].storage` value in the request
 3. Adobe PUTs the result to your bucket
 4. Your code reads from your own bucket — Firefly never holds the output
 
-Example for Photoshop smart-object replacement:
+Example for Photoshop smart-object replacement. Generate the PUT URL with the SDK — the `aws s3 presign` CLI command produces GET-only URLs (it has no method option):
+
+```js
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+const s3 = new S3Client({ region: 'us-east-1' });
+
+// Pre-signed PUT URL, valid 2 hours
+const outputUrl = await getSignedUrl(
+  s3,
+  new PutObjectCommand({ Bucket: 'my-bucket', Key: 'outputs/result.psd' }),
+  { expiresIn: 7200 },
+);
+```
 
 ```bash
-# Generate signed PUT URL
-OUTPUT_URL=$(aws s3 presign s3://my-bucket/outputs/result.psd \
-  --expires-in 7200 \
-  --method PUT)
-
+# OUTPUT_URL = the pre-signed PUT URL generated by the SDK snippet above
 curl --silent -X POST 'https://image.adobe.io/pie/psdService/smartObject' \
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-API-Key: $FIREFLY_SERVICES_CLIENT_ID" \
@@ -238,16 +247,13 @@ curl --silent -X POST 'https://image.adobe.io/pie/psdService/smartObject' \
   }"
 ```
 
-The `storage` field distinguishes the location type:
+The `storage` field distinguishes the location type. The Photoshop and Lightroom API specs accept exactly three values:
 
 | Value | Meaning |
 |---|---|
-| `external` | Pre-signed URL on your bucket |
-| `adobe` | Adobe-managed (rarely needed) |
-| `aws` | AWS S3 (synonym for external in most APIs) |
-| `azure` | Azure Blob |
+| `external` | Pre-signed URL on your bucket — S3 pre-signed URLs use this value |
+| `azure` | Azure Blob (SAS URL) |
 | `dropbox` | Dropbox |
-| `gdrive` | Google Drive |
 
 ## Pre-signed URL Expiry — The #1 Production Gotcha
 
@@ -264,7 +270,7 @@ await db.put({ jobId, sourceUrl, status: 'pending' });
 
 // Worker picks up the job 50 minutes later
 const job = await db.get(jobId);
-await firefly.generate({ source: { url: job.sourceUrl } });  // URL has 10 min left — flaky
+await firefly.generate({ image: { source: { url: job.sourceUrl } } });  // URL has 10 min left — flaky
 ```
 
 Right:
@@ -276,7 +282,7 @@ await db.put({ jobId, sourceBucket: bucket, sourceKey: key, status: 'pending' })
 // Worker re-signs just before the call
 const job = await db.get(jobId);
 const sourceUrl = await signUrl(job.sourceBucket, job.sourceKey, 7200);
-await firefly.generate({ source: { url: sourceUrl } });
+await firefly.generate({ image: { source: { url: sourceUrl } } });
 ```
 
 This pattern eliminates an entire class of intermittent failure that almost always surfaces when scaling a generative pipeline from UAT to production.
@@ -330,8 +336,9 @@ Storage references are correctly wired when:
 - **Upload returns 413 Payload Too Large:** Image exceeds endpoint limit (~8MB for most generate endpoints). Downscale before uploading.
 - **Upload returns 415 Unsupported Media Type:** `Content-Type` is missing or wrong. Must match the actual format (`image/jpeg`, `image/png`, `image/webp`).
 - **Adobe can't fetch the pre-signed URL:** Test by `curl -I <url>` from anywhere. If you get a 200, Adobe can too. If 403, the signing failed; regenerate.
-- **Pre-signed URL works for input but Photoshop API can't write to output:** PUT URL needs `--method PUT` when generating. GET URLs cannot be used as PUT destinations.
-- **Different cloud (GCS or Azure) returns 403 to Firefly:** Pre-signing parameters differ from AWS. Use the cloud's own signing tool — not S3-style query parameters.
+- **Pre-signed URL works for input but Photoshop API can't write to output:** the URL was signed for GET. `aws s3 presign` generates GET-only URLs — generate PUT URLs via the SDK (`getSignedUrl` with `PutObjectCommand`). GET URLs cannot be used as PUT destinations.
+- **Azure returns 403 to Firefly:** SAS signing parameters differ from AWS. Use Azure's own signing tool (`az storage blob generate-sas`) — not S3-style query parameters.
+- **GCS URL rejected:** Google Cloud Storage is not an allowlisted **Firefly** input source (`amazonaws.com`, `windows.net`, `dropboxusercontent.com` are). Copy the asset to an allowlisted store or use the Upload Endpoint. Note the asymmetry: the **Photoshop and Lightroom APIs** accept GCS pre-signed URLs fine via `storage: "external"` — any reachable signed HTTPS URL works there (validated in production against the live API). The allowlist applies only to the Firefly image-reference family.
 
 ## Chaining with Other Skills
 

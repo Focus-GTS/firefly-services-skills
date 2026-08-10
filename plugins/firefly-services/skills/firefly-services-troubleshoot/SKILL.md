@@ -36,9 +36,10 @@ Got an error response?
 │   ├── 401 → Authentication problem      → §1
 │   ├── 403 → Authorization / entitlement → §2
 │   ├── 429 → Rate limit                  → §3 (and use firefly-services-rate-limits)
-│   ├── 400 → Request body invalid        → §4
+│   ├── 400 → Generic bad request         → §4
 │   ├── 404 → Resource not found          → §5
-│   ├── 422 → Content validation / safety → §6
+│   ├── 422 → Content safety OR schema
+│   │         validation_error            → §6
 │   ├── 500 → Adobe-side                  → §7
 │   ├── 502/503/504 → Transient infra     → §7
 │   └── timeout (no response)             → §7
@@ -112,34 +113,36 @@ High-volume V1 builds typically hit the 4-RPM ceiling within the first sprint. T
 
 ## §4 — 400 Bad Request
 
-The request body is malformed or contains an invalid value. Firefly returns a structured error indicating what is wrong.
+The Firefly API's 400 is the *generic* malformed-request response — the body is simply `{"error_code": "bad_request"}`. Field-level schema violations (an invalid enum value, an unsupported size, a missing required field) come back as **422** with `error_code: "validation_error"` and a `validation_errors[]` array pinpointing the offending field — see §6.
 
-**Common 400 signatures:**
+**Common request-validation signatures (surface as 400 `bad_request` or 422 `validation_error`):**
 
 | Error | Cause | Fix |
 |---|---|---|
-| `"message": "size width must be one of [..."]"` | Width/height not in the allowed list | Use one of the supported `image3` output sizes: 2048x2048 and 1024x1024 (square 1:1), 2304x1792 (landscape 4:3), 1792x2304 (portrait 3:4), 2688x1536 (widescreen 16:9), 1344x768 (7:4), 1152x896 (9:7), 896x1152 (7:9) — see endpoint docs |
-| `"message": "prompt must not be empty"` | Empty or whitespace-only prompt | Validate prompt length client-side |
+| `validation_errors[]` entry on `size.width`/`size.height` | Width/height not in the allowed list | Use one of the supported `image3` output sizes: 2048x2048 and 1024x1024 (square 1:1), 2304x1792 (landscape 4:3), 1792x2304 (portrait 3:4), 2688x1536 (widescreen 16:9), 1344x768 (7:4), 1152x896 (9:7), 896x1152 (7:9) — see endpoint docs |
+| `validation_errors[]` entry on `prompt` | Empty or whitespace-only prompt | Validate prompt length client-side |
 | `"message": "Invalid style reference"` | Reference image was not uploaded via the storage endpoint | See `firefly-services-storage-refs` |
-| `"message": "Unknown contentClass"` | `contentClass` is `photo` or `art` only (V3); `null` is not allowed | Set explicitly |
+| `validation_errors[].loc: ["body", "contentClass"]`, msg `"value is not a valid enumeration member; permitted: 'photo', 'art'"` | `contentClass` is `photo` or `art` only (V3); anything else is rejected | Set explicitly — this one returns as **422** `validation_error` |
 
-When debugging 400s, log the entire request body and compare to the latest endpoint reference. The schema evolves between V2 and V3.
+When debugging 400s and 422s, log the entire request body and compare to the latest endpoint reference. The schema evolves between V2 and V3.
 
 ## §5 — 404 Not Found
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `GET /v3/jobs/<job_id>` returns 404 | Job ID is wrong, or job is older than 24 hours and was purged | Re-submit; jobs are not retained indefinitely |
+| `GET` on the job `statusUrl` (pattern `/v3/status/<job_id>`) returns 404 | Job ID is wrong, the URL was hand-built instead of copied from the submission response, or the job is older than 24 hours and was purged | Poll the exact `statusUrl` returned at submission; re-submit if purged. Jobs are not retained indefinitely |
 | `POST /v3/images/generate` returns 404 | Wrong base URL; V2 endpoints are at `firefly-api.adobe.io/v2`, V3 at `firefly-api.adobe.io/v3` | Check version path |
 | Asset URL returns 404 | Pre-signed URLs expire (typically 1 hour) | Re-fetch from the job result |
 
 ## §6 — 422 Unprocessable Entity (Content Validation)
 
-Firefly Services has built-in content safety. A 422 means the prompt or input image was rejected by the safety system.
+Firefly Services has built-in content safety. A 422 with a safety-family `error_code` means the prompt or input image was rejected by the safety system:
 
 ```json
-{"error_code": "422001", "message": "Prompt has been blocked due to policy violation"}
+{"error_code": "prompt_unsafe"}
 ```
+
+The Firefly API uses symbolic error codes. The safety family is `prompt_unsafe` (the prompt was blocked), `input_media_unsafe` (a reference/input image was blocked), and `output_media_unsafe` (the generated result was blocked); `language_not_supported` is also a 422. A 422 can instead be a schema failure — `{"error_code": "validation_error", "validation_errors": [...]}` with per-field `loc`/`msg` entries. That is a request-shape problem, not a safety block: fix the field it names (see §4).
 
 | Step | Action |
 |---|---|
@@ -165,11 +168,13 @@ Do **not** retry indefinitely on 5xx. Cap at 3 retries with exponential backoff;
 
 ## §8 — InvalidStorageReference
 
-Almost all generative endpoints accept image references via the `storage` API. A bare URL or raw bytes will be rejected.
+Almost all generative endpoints accept image references via the `storage` API. A bare URL or raw bytes will be rejected. The rejection surfaces as a 4xx whose body points at the image source — typically:
 
 ```json
-{"error_code": "400312", "message": "Invalid storage reference"}
+{"error_code": "validation_error", "validation_errors": [{"loc": ["body", "image", "source", "uploadId"], "msg": "..."}]}
 ```
+
+or the generic `{"error_code": "bad_request"}`. (SDK wrappers may surface this as an `InvalidStorageReference` message.)
 
 | Step | Action |
 |---|---|
@@ -183,7 +188,7 @@ Almost all generative endpoints accept image references via the `storage` API. A
 | Symptom | Cause | Fix |
 |---|---|---|
 | `ENOTFOUND firefly-api.adobe.io` | DNS failure | Check VPN, corporate proxy, internal DNS |
-| `ETIMEDOUT` connecting | Outbound firewall blocks `*.adobe.io` | Allowlist `firefly-api.adobe.io`, `image.adobe.io`, `image.adobe.io`, `ims-na1.adobelogin.com` |
+| `ETIMEDOUT` connecting | Outbound firewall blocks `*.adobe.io` | Allowlist `firefly-api.adobe.io`, `image.adobe.io`, `ims-na1.adobelogin.com` |
 | TLS handshake failure | Out-of-date CA bundle or MITM proxy | Update `ca-certificates`, configure corporate proxy CA correctly |
 | Intermittent 502s through proxy | Idle connection timeouts in corporate proxy | Configure shorter keepalive on the HTTP client |
 
@@ -192,13 +197,14 @@ These are environmental, not Adobe-side. Confirm by `curl -v https://firefly-api
 ## Quick-Reference Diagnostic Commands
 
 ```bash
-# Token round-trip
+# Token round-trip (full scope set: firefly_enterprise covers Custom Models,
+# creative_sdk covers Photoshop/Lightroom — needed for §2.3/§2.4 triage)
 curl --silent -X POST 'https://ims-na1.adobelogin.com/ims/token/v3' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   --data-urlencode 'grant_type=client_credentials' \
   --data-urlencode "client_id=$FIREFLY_SERVICES_CLIENT_ID" \
   --data-urlencode "client_secret=$FIREFLY_SERVICES_CLIENT_SECRET" \
-  --data-urlencode 'scope=openid,AdobeID,session,additional_info,read_organizations,firefly_api,ff_apis' \
+  --data-urlencode 'scope=openid,AdobeID,session,additional_info,read_organizations,firefly_api,ff_apis,firefly_enterprise,creative_sdk' \
   | jq .
 
 # Decode a JWT (no signature verify, just inspect)

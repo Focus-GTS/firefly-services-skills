@@ -34,7 +34,7 @@ Do **NOT** use this skill when:
 |---|---|
 | Adobe ID with admin access to an IMS org | `aio console org list --json` returns at least one org |
 | The org has a Firefly Services entitlement | `aio console api list --json` includes a Firefly service code |
-| `aio` CLI installed and authenticated | `aio --version` returns a version, `aio auth list` shows an active profile |
+| `aio` CLI installed and authenticated | `aio --version` returns a version, `aio auth ctx --list` shows at least one IMS context (log in with `aio auth login` if empty) |
 | Node 18+ for the SDK install step | `node --version` returns `v18.x` or higher |
 | `curl` for the token round-trip smoke test | `curl --version` returns curl 7.x or higher |
 
@@ -134,18 +134,15 @@ Ask the org admin for the profile name. There is no public catalog.
 
 Adobe deprecated JWT credentials on June 30, 2025; all certificates expire by March 1, 2026. Use **OAuth Server-to-Server** exclusively for any new project — even when migrating an existing one. Do not maintain mixed credential types.
 
-Issue credentials inside the workspace:
+Credential creation is a Developer Console UI step — the `aio console` plugin manages projects, workspaces, and API subscriptions, but has no credential-creation command. Deep-link straight to the selected project/workspace:
 
 ```bash
-aio console workspace credentials create \
-  --projectName "<customer>-firefly-services" \
-  --workspaceName Stage \
-  --type oauth_server_to_server \
-  --name "<customer>-firefly-sts" \
-  --json
+aio console open
 ```
 
-This returns a `client_id` and `client_secret`. Capture both immediately. The secret is not retrievable later — only rotatable. Store them in the customer's secrets manager (AWS Secrets Manager, Azure Key Vault, etc.), never in source control.
+In the Console UI, open the Stage workspace and add the credential: **Add API** (if prompted for a credential type when adding the first API) or **Credentials → Add Credential**, then choose **OAuth Server-to-Server** and name it `<customer>-firefly-sts`.
+
+The credential screen presents the `client_id` and `client_secret`. Capture both immediately. The secret is not retrievable later — only rotatable. Store them in the customer's secrets manager (AWS Secrets Manager, Azure Key Vault, etc.), never in source control.
 
 ## Step 5 — Wire the local environment
 
@@ -168,8 +165,10 @@ curl --location 'https://ims-na1.adobelogin.com/ims/token/v3' \
   --data-urlencode 'grant_type=client_credentials' \
   --data-urlencode "client_id=$FIREFLY_SERVICES_CLIENT_ID" \
   --data-urlencode "client_secret=$FIREFLY_SERVICES_CLIENT_SECRET" \
-  --data-urlencode 'scope=openid,AdobeID,session,additional_info,read_organizations,firefly_api,ff_apis'
+  --data-urlencode 'scope=openid,AdobeID,session,additional_info,read_organizations,firefly_api,ff_apis,firefly_enterprise,creative_sdk'
 ```
+
+The first seven scopes are enough for the generate-image smoke test alone; `firefly_enterprise` and `creative_sdk` cover the Custom Models and Photoshop/Lightroom workloads Step 3 subscribes, so request the full set from the start.
 
 A successful response:
 
@@ -247,7 +246,7 @@ If any of these fails, stop and resolve before declaring the engagement live. A 
 - **`aio` CLI not installed:** Run `npm install -g @adobe/aio-cli`. Do not install via Homebrew — the Adobe-maintained npm package is the only supported distribution.
 - **Multiple IMS orgs and the wrong one is selected:** Every `aio console *` command accepts `--orgId <id>`. Pass it explicitly when uncertain rather than relying on the default selection.
 - **`workspace api add` returns "product profile required":** The Firefly entitlement is profile-gated. Get the profile name from the customer's org admin and pass `--license-config FireflyAPI=<ProfileName>`.
-- **Token returns 200 but `access_token` is empty:** Almost always a scope list issue. The required scopes are `openid,AdobeID,session,additional_info,read_organizations,firefly_api,ff_apis`. Yes both `firefly_api` and `ff_apis` — the naming is historical.
+- **Token returns 200 but `access_token` is empty:** Almost always a scope list issue. The full scope set is `openid,AdobeID,session,additional_info,read_organizations,firefly_api,ff_apis,firefly_enterprise,creative_sdk` (`firefly_enterprise` and `creative_sdk` cover Custom Models and Photoshop/Lightroom). Yes both `firefly_api` and `ff_apis` — the naming is historical.
 - **Smoke test returns 401 after a successful token call:** The token is valid but does not include the Firefly Services entitlement. Check that the project's IMS org and the credential's owning org match.
 - **First API call returns 403 with no detail:** Wait 5 minutes. IMS credential propagation has a tail of up to ~5 minutes after issuance.
 - **JWT credentials still in use:** Migrate immediately. JWT was end-of-life on June 30, 2025 and certificates expire by March 1, 2026. Mixed credential types are unsupported.

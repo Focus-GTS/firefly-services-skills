@@ -2,7 +2,7 @@
 name: firefly-services-rate-limits
 description: Production rate-limit strategy for Adobe Firefly Services — default 4 RPM per credential, requesting increases, exponential backoff with jitter, token-bucket clients, SQS-fronted queueing for batch workloads, dead-letter queue handling, and per-endpoint quota planning. Use whenever the user mentions "429", "rate limited", "Too Many Requests", "Firefly is slow", "batch processing", "queueing", "high volume", "campaign at scale", or designs a system that will exceed 4 RPM. Encodes the production pattern that takes a generative pipeline from blocked at the default RPM ceiling to enterprise-scale campaign throughput.
 license: Apache-2.0
-compatibility: Applies to all Firefly Services endpoints (`firefly-api.adobe.io`, `image.adobe.io`, `image.adobe.io`). Queue patterns shown for AWS (SQS + Lambda) and equivalent on GCP (Pub/Sub + Cloud Functions) or Azure (Service Bus + Functions).
+compatibility: Applies to all Firefly Services endpoints (`firefly-api.adobe.io`, `image.adobe.io` for Photoshop and Lightroom). Queue patterns shown for AWS (SQS + Lambda) and equivalent on GCP (Pub/Sub + Cloud Functions) or Azure (Service Bus + Functions).
 allowed-tools: Bash(curl:*) Read Write Edit
 metadata:
   version: "1.0.0"
@@ -135,17 +135,18 @@ async function callWithBackoff(fn, { maxAttempts = 5 } = {}) {
       if (status !== 429 && !(status >= 500 && status < 600)) throw err;
       if (attempt >= maxAttempts) throw err;
       const retryAfterSec = parseInt(err.response?.headers?.get('retry-after') ?? '0', 10);
-      const baseMs = retryAfterSec
-        ? retryAfterSec * 1000
-        : Math.min(60_000, 1000 * 2 ** attempt);
-      const jitterMs = Math.random() * baseMs;
-      await sleep(jitterMs);
+      const delayMs = retryAfterSec
+        // Retry-After is a minimum wait — sleep at least that long, plus small additive jitter
+        ? retryAfterSec * 1000 + Math.random() * 1000
+        // No server hint: exponential backoff with full jitter
+        : Math.random() * Math.min(60_000, 1000 * 2 ** attempt);
+      await sleep(delayMs);
     }
   }
 }
 ```
 
-Honor `Retry-After` when present — Adobe knows the exact moment the quota refills.
+Honor `Retry-After` when present — Adobe knows the exact moment the quota refills. Treat it as a floor: sleep the full `Retry-After` duration and add jitter *on top of* it, never below it — a shorter sleep retries before the quota refills and burns an attempt. Full jitter belongs only on the exponential path, where there is no server hint.
 
 Cap attempts at 5. Beyond that, surface the failure to the application — the request is going to dead-letter regardless.
 
@@ -183,7 +184,7 @@ Key configuration:
 | Component | Setting | Why |
 |---|---|---|
 | SQS visibility timeout | 6 × max Firefly response time | Worker holds the message until call completes |
-| Lambda reserved concurrency | `floor(provisioned RPM / 60)` | Hard cap on concurrent calls |
+| Lambda reserved concurrency | `max(1, floor(provisioned RPM / 60))` | Hard cap on concurrent calls — never 0 (reserved concurrency 0 throttles every invocation). At low provisioned RPM (e.g. the 4 RPM default) this is 1, and the token bucket in Step 2, not Lambda concurrency, does the pacing |
 | Lambda batch size | 1 | Per-message error isolation |
 | SQS maxReceiveCount | 3 | Move to DLQ after 3 failed attempts |
 | DLQ retention | 14 days | Manual replay window |
@@ -249,7 +250,7 @@ Rate-limit architecture is production-ready when:
 
 ## Troubleshooting & Edge Cases
 
-- **429s spiking after a code deploy:** Likely concurrent workers exceeding the limit. Check Lambda reserved concurrency or your worker pool size; reduce to match `provisionedRPM / 60`.
+- **429s spiking after a code deploy:** Likely concurrent workers exceeding the limit. Check Lambda reserved concurrency or your worker pool size; reduce to match `max(1, floor(provisionedRPM / 60))`.
 - **429s coming from a single credential while others are fine:** Per-credential limit. Either request a raise for that credential or split the workload across more credentials.
 - **`Retry-After` header missing on 429:** Some legacy endpoints don't return it. Fall back to exponential backoff with cap.
 - **Custom-model jobs queue but never run:** Custom-model training is concurrency 1 per org. Other jobs queue behind it; this is by design.

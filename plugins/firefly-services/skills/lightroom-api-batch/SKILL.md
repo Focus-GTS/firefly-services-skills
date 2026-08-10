@@ -2,7 +2,7 @@
 name: lightroom-api-batch
 description: Batch image processing with Adobe Lightroom API — preset application, auto-tone, auto-straighten, exposure/highlight/shadow/color adjustments, color grading, and batch normalization across an image set. Use whenever the user wants "Lightroom API", "batch photo processing", "apply preset", "auto-tone images", "color grade", "normalize a photo set", "image.adobe.io", "Camera Raw filter", or needs to apply consistent processing to many images at scale. Encodes the pattern for delivering visually cohesive image sets from mixed-source raw input — the workhorse pipeline for any photo-heavy creative workflow.
 license: Apache-2.0
-compatibility: Requires `creative_sdk` scope. Endpoint base: `image.adobe.io/v2/*`. Inputs accept JPEG, PNG, TIFF, and raw formats (.dng, .cr2, .nef, .arw). Outputs JPEG/PNG/TIFF/DNG. Async with job polling.
+compatibility: Requires `creative_sdk` scope. Endpoint base: `image.adobe.io/lrService/*`. Inputs accept JPEG, PNG, TIFF, and raw formats (.dng, .cr2, .nef, .arw). Outputs JPEG/PNG/DNG (plus XMP via `application/rdf+xml`). Async with job polling.
 allowed-tools: Bash(curl:*) Bash(jq:*) Read Write Edit
 metadata:
   version: "1.0.0"
@@ -60,13 +60,12 @@ curl --silent -X POST 'https://image.adobe.io/lrService/presets' \
       "href": "'"$OUTPUT_URL"'",
       "storage": "external",
       "type": "image/jpeg",
-      "overwrite": true,
       "quality": 9
     }]
   }'
 ```
 
-Response includes a status URL to poll. Same pattern as Photoshop API.
+Response includes a status URL to poll. Same pattern as Photoshop API. (The `overwrite` output flag applies only to Adobe-storage outputs — omit it for external pre-signed URLs.)
 
 ## Step 2 — Apply Auto Adjustments
 
@@ -198,13 +197,12 @@ curl --silent -X POST 'https://image.adobe.io/lrService/autoTone' \
   -d '{
     "inputs": {"href": "'"$RAW_FILE_URL"'", "storage": "external"},
     "outputs": [
-      {"href": "'"$OUTPUT_JPEG_URL"'", "storage": "external", "type": "image/jpeg", "quality": 10},
-      {"href": "'"$OUTPUT_DNG_URL"'", "storage": "external", "type": "image/x-adobe-dng"}
+      {"href": "'"$OUTPUT_JPEG_URL"'", "storage": "external", "type": "image/jpeg", "quality": 10}
     ]
   }'
 ```
 
-Multi-output mode produces a JPEG for distribution and a processed DNG for further editing. Useful when the customer wants both delivery-ready and master files.
+`autoTone` supports a single output per job. When the customer wants both a delivery-ready JPEG and a processed DNG master, submit two jobs against the same source — one with `"type": "image/jpeg"`, one with `"type": "image/x-adobe-dng"`. Same source, same adjustments, two renditions.
 
 ## Production Patterns
 

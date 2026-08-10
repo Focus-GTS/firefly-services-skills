@@ -2,7 +2,7 @@
 name: firefly-video-model
 description: Generate video clips with Adobe Firefly Video Model — text-to-video and image-to-video, prompt patterns optimized for motion vs. coherence, duration and aspect ratio control, IP-safe commercial use posture, and the production workflow for inserting Firefly video into existing edit pipelines. Use whenever the user mentions "Firefly Video", "generate video", "text-to-video", "image-to-video", "motion graphics", "video clip", "video model", or wants to add Firefly-generated motion to a campaign or content workflow. The first commercially-safe AI video generation API; encodes the prompt engineering and integration patterns for production motion-graphics workflows.
 license: Apache-2.0
-compatibility: Requires `ff_apis` scope and Firefly Video entitlement (often a separate SKU from base Firefly Services). Endpoint: `firefly-api.adobe.io/v3/videos/generate`. Output is video file (typically MP4, 1080p). Generation can take 2-10 minutes per clip.
+compatibility: Requires `ff_apis` scope and Firefly Video entitlement (often a separate SKU from base Firefly Services). Endpoint: `firefly-api.adobe.io/v3/videos/generate`. Output is video file (typically MP4, 1080p). Generation typically takes 1-3 minutes per clip, occasionally longer under load.
 allowed-tools: Bash(curl:*) Bash(jq:*) Read Write Edit
 metadata:
   version: "1.0.0"
@@ -62,17 +62,28 @@ curl --silent -X POST 'https://firefly-api.adobe.io/v3/videos/generate' \
 
 The `x-model-version: video1_standard` header selects the video model. `sizes` is an **array** of `{width, height}` objects.
 
-Returns the async job pattern (`jobId`, `statusUrl`, `cancelUrl`). Poll the status URL with `Authorization: Bearer <token>` and `x-api-key: <client_id>` — note that video jobs take **2-10 minutes typically**, not the ~10 seconds image jobs take. Use a longer polling interval (5-15s) and a much higher max timeout (15-20 minutes).
+Returns the async job pattern (`jobId`, `statusUrl`, `cancelUrl`). Poll the status URL with `Authorization: Bearer <token>` and `x-api-key: <client_id>` — note that video jobs take **1-3 minutes typically** (occasionally longer under load), not the ~10 seconds image jobs take. Use a longer polling interval (5-15s) and a generous max timeout (10-15 minutes).
 
 ## Step 2 — Request Shape
 
 ```json
 {
   "prompt": "string — describe motion + scene + style + camera",
+  "negativePrompt": "string — characteristics to steer away from",
   "sizes": [{"width": 1920, "height": 1080}],
   "seeds": [12345],
-  "image": {"source": {"uploadId": "abc-123"}},
-  "videoSettings": {}
+  "bitRateFactor": 18,
+  "image": {
+    "conditions": [
+      {"source": {"uploadId": "abc-123"}, "placement": {"position": 0}}
+    ]
+  },
+  "videoSettings": {
+    "cameraMotion": "camera zoom in",
+    "shotAngle": "low angle shot",
+    "shotSize": "close-up shot",
+    "promptStyle": "cinematic"
+  }
 }
 ```
 
@@ -81,10 +92,23 @@ Send the `x-model-version: video1_standard` header with the request to select th
 | Field | Notes |
 |---|---|
 | `prompt` | The most-important field; see prompt patterns below |
-| `sizes` | **Array** of `{width, height}`. Aspect ratios: 1920×1080 (16:9), 1080×1920 (9:16), 1080×1080 (1:1) |
+| `negativePrompt` | Optional — characteristics the model should steer away from (e.g. "NO people, NO trees") |
+| `sizes` | **Array** of `{width, height}`. Supported sizes: 1920×1080 (16:9), 1080×1920 (9:16), 960×960 (1:1), 1280×720 (16:9), 720×1280 (9:16) |
 | `seeds` | Array; currently 1 seed supported. Same seed = same output, useful for reproducibility |
-| `image` | Optional — when provided, used as a keyframe (first or final frame) to guide generation |
-| `videoSettings` | Optional — camera motion, shot angle, shot size, and prompt-style controls |
+| `bitRateFactor` | Optional int 0-63, default 18. Encoding constant rate factor: 0 = lossless/largest file, 63 = smallest file/lowest quality. Suggested range 17-23 — your lever for the file-size planning below |
+| `image` | Optional — `{"conditions": [...]}`, an array of keyframes. Each condition **requires** both `source` (`uploadId`, `url`, or `creativeCloudFileId`) and `placement` (`{"position": 0}` = first frame, `{"position": 1}` = last frame) |
+| `videoSettings` | Optional — typed camera motion, shot angle, shot size, and prompt-style controls (enums below) |
+
+### `videoSettings` enum values
+
+| Setting | Accepted values |
+|---|---|
+| `cameraMotion` | `camera pan left`, `camera pan right`, `camera zoom in`, `camera zoom out`, `camera tilt up`, `camera tilt down`, `camera locked down`, `camera handheld` |
+| `shotAngle` | `aerial shot`, `eye_level shot`, `high angle shot`, `low angle shot`, `top-down shot` |
+| `shotSize` | `close-up shot`, `extreme close-up`, `medium shot`, `long shot`, `extreme long shot` |
+| `promptStyle` | `anime`, `3d`, `fantasy`, `cinematic`, `claymation`, `line art`, `stop motion`, `2d`, `vector art`, `black and white` |
+
+Structured `videoSettings.cameraMotion` is the deterministic way to control the camera — prefer it over prompt-text camera language when the move maps to one of the enum values.
 
 ## Step 3 — Prompt Patterns for Video
 
@@ -108,6 +132,8 @@ Video prompts differ from image prompts. The model needs to know **motion**, not
 
 ### Camera move vocabulary the model understands
 
+For pans, zooms, tilts, locked-down, and handheld moves, the typed `videoSettings.cameraMotion` enum (Step 2) is the deterministic option. Use prompt-text camera language for moves outside the enum:
+
 - `dolly in` / `dolly out` — camera moves toward / away
 - `pan left` / `pan right` — camera rotates horizontally
 - `tilt up` / `tilt down` — camera rotates vertically
@@ -130,12 +156,18 @@ Provide a source image and Firefly will generate motion from that frame:
 ```json
 {
   "prompt": "gentle camera pull-back revealing more of the scene, subtle wind moving the trees",
-  "image": {"source": {"uploadId": "$SOURCE_IMAGE_ID"}},
+  "image": {
+    "conditions": [
+      {"source": {"uploadId": "$SOURCE_IMAGE_ID"}, "placement": {"position": 0}}
+    ]
+  },
   "sizes": [{"width": 1920, "height": 1080}]
 }
 ```
 
 (Send with the `x-model-version: video1_standard` header.)
+
+Each keyframe condition requires both `source` and `placement`. `"position": 0` anchors the image as the **first frame**; `"position": 1` anchors it as the **last frame**. Supplying two conditions — one at position 0 and one at position 1 — generates a clip that starts on one approved still and ends on another.
 
 Image-to-video is the production pattern for **motion variants of approved hero stills** — you've already approved the static image; the video is just adding motion to it.
 
@@ -149,19 +181,20 @@ Successful job response:
 {
   "status": "succeeded",
   "result": {
+    "size": {"width": 1920, "height": 1080},
     "outputs": [
       {
+        "seed": 646214641,
         "video": {
           "url": "https://pre-signed-cdn-url..."
-        },
-        "thumbnail": {"url": "..."},
-        "duration": 5,
-        "format": "mp4"
+        }
       }
     ]
   }
 }
 ```
+
+Each output carries exactly `seed` and `video.url`; the `result` also carries the `size`. Duration and container metadata are not part of the response — probe the downloaded file (e.g. `ffprobe`) if your pipeline needs them.
 
 Download the MP4 immediately and re-host. URLs expire (typically 1 hour).
 
@@ -212,7 +245,7 @@ Video generation is more expensive than image generation in compute time and quo
 
 | Metric | Approximate |
 |---|---|
-| Time per clip | 2-10 minutes typically |
+| Time per clip | 1-3 minutes typically, occasionally longer under load |
 | RPM limit | Lower than image (~1 RPM default) |
 | Cost per credit | Higher than image (consult Adobe pricing) |
 | Concurrent jobs | 1-2 per credential default |
@@ -236,7 +269,7 @@ Document this with the customer's legal team. The Firefly Video output is review
 A Firefly Video pipeline is production-ready when:
 
 1. Customer has the Firefly Video entitlement (verify SKU before building)
-2. Generation jobs are tracked with appropriate timeouts (15-20 min max)
+2. Generation jobs are tracked with appropriate timeouts (10-15 min max)
 3. Output MP4s are downloaded and re-hosted within the URL expiry window
 4. Prompts follow the structured pattern (subject + setting + motion + camera + style)
 5. Use case is appropriate for clip-length output (not long-form)
@@ -246,8 +279,8 @@ A Firefly Video pipeline is production-ready when:
 
 - **Output has incoherent or "morphing" subjects:** Prompt is too complex. Simplify to one subject + one motion.
 - **Output is shorter than expected:** Adobe may clip if temporal coherence is breaking down. Reduce motion complexity.
-- **Job stuck for 15+ minutes:** Cancel and resubmit. Long stalls are rare but happen during peak load.
-- **`sizes` rejected:** `sizes` must be an **array** of `{width, height}` objects. Use the published aspect ratios (1920×1080, 1080×1920, 1080×1080). Custom dimensions not supported.
+- **Job stuck for 10+ minutes:** Cancel and resubmit. Typical jobs finish in 1-3 minutes; long stalls are rare but happen during peak load.
+- **`sizes` rejected:** `sizes` must be an **array** of `{width, height}` objects. Use the published sizes (1920×1080, 1080×1920, 960×960, 1280×720, 720×1280) — note the square size is 960×960, not 1080×1080. Custom dimensions not supported.
 - **Request runs against the wrong model:** Ensure the `x-model-version: video1_standard` header is present on the submission.
 - **Content safety filter triggers on a clean prompt:** Synthetic video has stricter safety filters than image. Strip any reference to people, brands, or sensitive themes and try again.
 - **Image-to-video output ignores the source:** Source image may not match the target aspect ratio. Pre-process to the exact target size.

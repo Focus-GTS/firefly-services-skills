@@ -40,7 +40,7 @@ START
   ├── load-template-manifest            (PSD layer structure, cached)
   ├── route-by-content-type             (people present? logo only? etc.)
   │
-  ├── detect-subject                    (Photoshop API: sensei/mask)
+  ├── detect-subject                    (Photoshop API: POST /v2/remove-background, mode: mask)
   ├── crop-and-fit                      (Photoshop API: productCrop / applyAutoCrop)
   ├── upload-source-to-firefly          (storage ref)
   ├── generate-expanded-background      (firefly-expand: hero image → full bg)
@@ -63,6 +63,8 @@ START
   └── audit-log                         (audit event ingest)
 END
 ```
+
+Note on `detect-subject`: the current subject-mask endpoint is `POST https://image.adobe.io/v2/remove-background` with `mode: "mask"` (it supersedes the V1 `sensei/mask` family). Unlike the Photoshop document APIs, V2 remove-background hosts the result itself — the grayscale mask arrives as an Adobe pre-signed `destination.url` in the job status, so this function does not supply an output bucket.
 
 Each function:
 - Is idempotent (re-running with the same input produces the same output)
@@ -193,7 +195,9 @@ Firefly and Photoshop API operations are async. The standard pattern is `waitFor
 
 This pattern decouples submission from polling and avoids burning Step Functions cost on idle waits.
 
-### Alternative: webhook callback (preferred when available)
+### Alternative: webhook callback (when available)
+
+> **Illustrative — verify against current Adobe docs.** The `notify`/`webhookUrl` field below is not part of the published Firefly, Photoshop, or Lightroom request schemas or the official SDKs at time of writing — no bundled OpenAPI spec documents a request-body webhook field. Treat this section as a design pattern, not a documented contract: confirm field names against the current Adobe Firefly Services documentation before relying on it. If your account does not expose webhook callbacks, the `waitForTaskToken` polling pattern above is the default.
 
 If the endpoint supports webhooks (`notify.webhookUrl`), use those instead of polling. The pattern:
 
@@ -202,7 +206,7 @@ If the endpoint supports webhooks (`notify.webhookUrl`), use those instead of po
 3. API Gateway → Lambda → `SendTaskSuccess(taskToken, result)`
 4. Step Functions resumes
 
-Webhooks eliminate the polling Lambda entirely. Use them whenever the endpoint supports them.
+Webhooks eliminate the polling Lambda entirely. Use them when the endpoint supports them; otherwise keep the polling pattern as the default.
 
 ## Step 5 — Multi-Aspect Rendering (Map State)
 
@@ -245,7 +249,7 @@ For a 15-20 function pipeline, structured logging is non-negotiable. Every funct
 | `apiCall.endpoint` | Which Adobe endpoint was hit |
 | `apiCall.duration_ms` | Wall-clock |
 | `apiCall.status` | HTTP status |
-| `apiCall.rateLimitRemaining` | From `X-RateLimit-Remaining` header |
+| `apiCall.retryAfter` | `Retry-After` header on any `429` — the documented rate-limit signal. If `X-RateLimit-*` headers happen to be present, log them too, but treat them as best-effort |
 | `outcome` | `succeeded` / `failed` / `retried` |
 
 Dashboards to build:
@@ -253,7 +257,7 @@ Dashboards to build:
 - Pipeline success rate per template per customer
 - p50 / p95 end-to-end duration
 - Per-state failure rates (which step breaks most often)
-- Adobe-side `X-RateLimit-Remaining` distribution
+- `429` rate and `Retry-After` distribution per credential (best-effort: `X-RateLimit-*` header values when present)
 
 ## Validate
 

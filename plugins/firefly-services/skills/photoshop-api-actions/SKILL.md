@@ -2,7 +2,7 @@
 name: photoshop-api-actions
 description: Apply Photoshop actions, smart-object replacement, and document operations programmatically using the Adobe Photoshop API — running .atn action files, smart-object source replacement, text replacement, layer visibility toggles, and the input/output storage pattern. Use whenever the user mentions "Photoshop API", "smart object replacement", "smart-object", "apply action", "action runner", "image.adobe.io", ".atn file", "PSD automation", "layer replacement", "text layer update", or wants to drive Photoshop operations from a server without the desktop app. Encodes the production pattern for replacing smart-object content in key-art PSDs at enterprise scale.
 license: Apache-2.0
-compatibility: Requires `creative_sdk` scope. Endpoint base: `image.adobe.io/v2/*`. Source PSDs and assets pass through storage refs (input + output destinations). Most operations are async with job polling.
+compatibility: Requires `creative_sdk` scope. Endpoint base: `image.adobe.io/pie/psdService/*`. Source PSDs and assets pass through storage refs (input + output destinations). Most operations are async with job polling.
 allowed-tools: Bash(curl:*) Bash(jq:*) Read Write Edit
 metadata:
   version: "1.0.0"
@@ -86,10 +86,12 @@ curl --silent -X POST 'https://image.adobe.io/pie/psdService/smartObject' \
       "storage": "external",
       "type": "image/jpeg",
       "overwrite": true,
-      "quality": 8
+      "quality": 7
     }]
   }'
 ```
+
+JPEG `quality` is an integer from 1 to 7, with 7 as the highest quality (and the default).
 
 Response:
 
@@ -160,7 +162,12 @@ Text replacement preserves the original layer's font, position, and tracking unl
 | `from` / `to` | Character index range the style applies to |
 | `orientation` | Text orientation (`horizontal` / `vertical`) |
 
-Specifying a font not in the supported list silently fails — the API uses a fallback. Always validate against the fonts list.
+By default, specifying a font that is not available substitutes ArialMT and the job still succeeds (`options.manageMissingFonts` defaults to `useDefault`). Two controls change this:
+
+- `options.manageMissingFonts: "fail"` — the job status becomes `failed`, with the missing-font details in the status `details` section. Use this to fail fast instead of shipping a substituted font.
+- `options.fonts` — an array of storage refs (`{href, storage}`) to custom font files needed by the document, letting you supply fonts that aren't in the supported list.
+
+Always validate against the fonts list.
 
 ## Step 3 — Apply Photoshop Actions (.atn)
 
@@ -244,16 +251,19 @@ Response includes the full layer tree with names, kinds, visibility, smart-objec
 ```
 Per campaign asset request:
   1. Load campaign config (which template, which assets, which text)
-  2. Compose smart-object replacement request:
+  2. Compose a documentOperations request (its layer objects accept both
+     smart-object input and text blocks, so one call covers the whole edit):
        inputs = [template_psd]
        options.layers = [
-         {name: "hero", input: {hero_image_url}},
-         {name: "logo", input: {brand_logo_url}},
-         {name: "headline", text: {campaign_headline}}
+         {edit: {}, name: "hero", input: {hero_image_url}},
+         {edit: {}, name: "logo", input: {brand_logo_url}},
+         {edit: {}, name: "headline", text: {campaign_headline}}
        ]
        outputs = [{href: output_url, type: "image/jpeg"}]
   3. Submit, poll, persist output
 ```
+
+Note: the `/smartObject` endpoint's layer objects accept only `input` (no `text` property), so a single `/smartObject` call cannot also replace a text layer. Either combine everything in one `POST /pie/psdService/documentOperations` call as above, or make two calls — `/smartObject` for the image slots, then `/text` for the headline.
 
 At enterprise campaign scale, this runs through SQS → Lambda. One template + one config = one rendered output. A full campaign run is the orchestration of this base operation thousands of times.
 
@@ -301,7 +311,7 @@ A Photoshop API pipeline is production-ready when:
 
 - **Layer not found:** Manifest is out of sync with template. Refetch with `documentManifest` and audit names.
 - **Text layer changes ignored:** The layer is not actually a text layer (flagged as raster in the manifest). Convert in desktop Photoshop and re-export.
-- **Font fallback used silently:** Font name doesn't match supported list. See [SupportedFonts.md](https://github.com/AdobeDocs/photoshop-api-docs/blob/main/SupportedFonts.md).
+- **Font fallback used silently:** Font name doesn't match supported list, and `manageMissingFonts` was left at its `useDefault` setting (ArialMT substitution). Set `options.manageMissingFonts: "fail"` to surface the error, or supply the font via `options.fonts`. See [SupportedFonts.md](https://github.com/AdobeDocs/photoshop-api-docs/blob/main/SupportedFonts.md).
 - **Output is corrupted:** Output URL was generated as GET, not PUT. Regenerate as PUT.
 - **Smart-object replacement preserves the old content:** The named layer is not a smart object. Convert in desktop Photoshop.
 - **Action plays but does nothing visible:** Action name in the .atn file doesn't match `actionName` field. Re-open the .atn in desktop Photoshop to find the exact name.

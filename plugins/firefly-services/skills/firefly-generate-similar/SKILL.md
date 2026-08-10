@@ -38,7 +38,7 @@ A subtle but important distinction:
 
 Generate Similar treats the source as an anchor — outputs are recognizable derivatives. Style reference treats the source as inspiration — outputs share aesthetic but not subject.
 
-For campaign variation generation (hero-asset variants for a single approved concept), Generate Similar is correct. For applying brand style to *new* subjects across a campaign creator, use generate-with-style-reference.
+For campaign variation generation (hero-asset variants for a single approved concept), Generate Similar is correct. For applying brand style to *new* subjects across a campaign creator, use Generate Image with `style.imageReference` — see `firefly-generate-image-v3-async`.
 
 ## Step 1 — Submit the Generate Similar Job
 
@@ -47,14 +47,14 @@ curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/generate-similar' 
   -H "Authorization: Bearer $FIREFLY_SERVICES_ACCESS_TOKEN" \
   -H "X-Api-Key: $FIREFLY_SERVICES_CLIENT_ID" \
   -H 'Content-Type: application/json' \
-  -d '{
-    "image": {"source": {"uploadId": "$SOURCE_UPLOAD_ID"}},
-    "numVariations": 4,
-    "size": {"width": 1024, "height": 1024}
-  }'
+  -d "{
+    \"image\": {\"source\": {\"uploadId\": \"$SOURCE_UPLOAD_ID\"}},
+    \"numVariations\": 4,
+    \"size\": {\"width\": 1024, \"height\": 1024}
+  }"
 ```
 
-Returns the async job pattern — poll the same way as other async endpoints.
+Returns synchronously — the 200 response body contains `size` and `outputs[]` with pre-signed result URLs. No polling required.
 
 ## Step 2 — Request Shape
 
@@ -73,6 +73,7 @@ Returns the async job pattern — poll the same way as other async endpoints.
 | `numVariations` | 1-4 per job. For more, submit multiple jobs |
 | `size` | Same constraints as Generate Image — pick from supported list |
 | `seeds` | Optional array; one seed per variation. Same seeds = reproducible outputs |
+| `tileable` | Optional boolean, default `false`. Output can be repeated seamlessly in any direction — useful for texture/background variation workloads |
 
 ## Step 3 — Controlling Variation Diversity
 
@@ -158,13 +159,13 @@ A Generate Similar pipeline is production-ready when:
 - **All variations look identical:** Seeds are the same. Randomize seeds across the job.
 - **Variations are too far from the source:** Submit smaller variation batches (1-2 per job). Larger batches push more diversity.
 - **Output is the same as the source:** Source is being read but the model decided minimum deviation was appropriate. Try a different source — heavily-processed photos confuse the model.
-- **Aspect ratio of output differs from source:** Set `size` explicitly. Default is the largest supported aspect that matches the source.
+- **Aspect ratio of output differs from source:** Set `size` explicitly. The default is 2048×2048 (square) regardless of the source's aspect ratio.
 - **Source image returns 400312:** Storage reference is stale or expired. See `firefly-services-storage-refs`.
 
 ## Chaining with Other Skills
 
 - `firefly-services-storage-refs` — Source asset upload
-- `firefly-generate-image-v3-async` — Same async pattern
+- `firefly-generate-image-v3-async` — New-image generation (Generate Similar itself returns synchronously)
 - `firefly-expand-fill` — Aspect-ratio expansion of selected variations
 - `firefly-services-rate-limits` — Batch parallelism
 

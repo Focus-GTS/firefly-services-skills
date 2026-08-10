@@ -70,13 +70,13 @@ Three caches matter, in order of impact:
 
 ### Cache 1: Prompt deduplication (per-campaign)
 
-In a single campaign run, the same prompt is often submitted multiple times — by different upstream systems, retry logic, or accidental duplicates. A prompt-deduplication cache keyed on `(promptHash, modelId, seed, parameters)` returns the prior output without calling Firefly.
+In a single campaign run, the same prompt is often submitted multiple times — by different upstream systems, retry logic, or accidental duplicates. A prompt-deduplication cache keyed on `(promptHash, modelId, seeds, parameters)` returns the prior output without calling Firefly.
 
 ```js
 const cacheKey = sha256(JSON.stringify({
   prompt: req.prompt,
   customModelId: req.customModelId,
-  seed: req.seed,
+  seeds: req.seeds,
   size: req.size,
   contentClass: req.contentClass,
   styleReference: req.style?.imageReference?.source?.uploadId,
@@ -93,7 +93,7 @@ await ddb.put({ TableName: 'firefly-prompt-cache', Item: {
 return result.outputs.map(o => o.image.url);
 ```
 
-Cache TTL: align with the validity of the Firefly output URLs. Typically 24 hours, though re-hosting outputs in your own bucket lets you cache indefinitely.
+Cache TTL: align with the validity of the Firefly output URLs. Adobe's pre-signed output URLs expire in **one hour**, so a cache that stores Adobe URLs must use a TTL of ≤ 1 hour — anything longer serves dead links. Re-hosting outputs in your own bucket (Cache 3) lets you cache indefinitely; that is the pattern that makes long-TTL deduplication worthwhile.
 
 Typical hit rate: 5-15% on a campaign run, climbing to 25%+ in batch-driven workflows where duplicate prompts are common.
 
@@ -136,7 +136,7 @@ Audit one week of DLQ contents. Any class that should not have been retried but 
 
 ## Step 4 — Seed Reuse for Deterministic Regeneration
 
-The `seed` parameter on Generate Image lets you reproduce an exact output. For cost control, this matters in two scenarios:
+The `seeds` parameter on Generate Image (an array of 1-4 unique integers) lets you reproduce an exact output. For cost control, this matters in two scenarios:
 
 | Scenario | Pattern |
 |---|---|
@@ -149,12 +149,14 @@ Without seed reuse, "make it slightly different" requires generating multiple ne
 {
   "prompt": "an icon of a key, brand-light style",
   "customModelId": "...",
-  "seed": [42],
+  "seeds": [42],
   "size": {"width": 1024, "height": 1024}
 }
 ```
 
-Store the seed alongside every output asset in DynamoDB. When designers want a variation, the UI surfaces "regenerate with tweak" using the original seed.
+When `customModelId` is set, the request must also send the `x-model-version: image3_custom` header — without it, the call runs against the base Firefly model, `customModelId` is ignored, and you still pay for an off-brand output (which then feeds the rejection-regeneration loop in §7 #4). See `firefly-custom-models` for the full invocation pattern.
+
+Each output in the response carries the `seed` (singular) that produced it. Store that seed alongside every output asset in DynamoDB. When designers want a variation, the UI surfaces "regenerate with tweak" using the original seed.
 
 ## Step 5 — Custom Model vs Style Reference: The Cost Tradeoff
 
@@ -183,12 +185,12 @@ The variants and aspects multiply through every campaign. Be deliberate:
 
 | Knob | Cost-optimal default | Surprise default |
 |---|---|---|
-| `numVariations` per generate call | 1 (also the API default), regenerate if not satisfied | Explicitly raising to 4+ burns 4× the credits per request |
+| `numVariations` per generate call | 1 (the API default when no `seeds` are passed), regenerate if not satisfied | Raising to 4 (the max) burns 4× the credits per request |
 | Aspect ratios per asset | 3 (one per major platform) | 8+ (every conceivable cut) |
 | Resolution | 1024×1024 standard; upscale on demand | Always max resolution |
 | Style + structure refs | Use when needed | Always set, even when not needed (slows generation but not cost) |
 
-The single highest-impact change: keep `numVariations` at 1 (the API default). A request generates 1 image unless `numVariations` is explicitly raised. Designers can request more if they need them — but watch for code or UI that quietly sets it to 4, which burns 4× the credits before anyone notices.
+The single highest-impact change: keep `numVariations` at 1. Note the actual API default: `numVariations` defaults to **the number of seeds passed**, or 1 only when `seeds` is not specified. A request with `seeds: [42, 43]` generates 2 images — and bills 2 credits — even without `numVariations` in the body. Since Step 4 teaches passing seed arrays, keep them single-element unless you intend to pay per seed. Designers can request more if they need them — but watch for code or UI that quietly sets `numVariations` to 4 or passes multi-element seed arrays, which multiplies the credits before anyone notices.
 
 ## Step 7 — The "Consumption is 3× Forecast" Debugging Sequence
 
