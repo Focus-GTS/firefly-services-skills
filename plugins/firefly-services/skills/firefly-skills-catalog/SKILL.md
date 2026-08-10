@@ -42,7 +42,7 @@ Each track maps a real user intent to an ordered reading list. Pick the one clos
 1. [`firefly-services-bootstrap`](../firefly-services-bootstrap/SKILL.md) — Gets a brand-new Firefly Services project from zero to a verified first API call in one workflow. Designed ...
 2. [`firefly-services-auth`](../firefly-services-auth/SKILL.md) — Obtains and refreshes IMS access tokens for Firefly Services using OAuth Server-to-Server credentials. Cove...
 3. [`firefly-services-storage-refs`](../firefly-services-storage-refs/SKILL.md) — Pass images into Firefly endpoints and capture results out of them. Almost every generative or editing API ...
-4. [`firefly-generate-image-v3-async`](../firefly-generate-image-v3-async/SKILL.md) — The production pattern for text-to-image generation with Adobe Firefly's V3 asynchronous API. V3 async is t...
+4. [`firefly-generate-image-v3-async`](../firefly-generate-image-v3-async/SKILL.md) — The production pattern for text-to-image generation with Adobe Firefly's V3 asynchronous API (`/v3/images/g...
 
 ### Diagnose a Firefly Services failure in production
 
@@ -78,7 +78,7 @@ Each track maps a real user intent to an ordered reading list. Pick the one clos
 **Read in this order:**
 
 1. [`firefly-batch-pipeline`](../firefly-batch-pipeline/SKILL.md) — The complete deployable blueprint for production-scale generative campaign workloads. This skill stitches t...
-2. [`firefly-generate-image-v3-async`](../firefly-generate-image-v3-async/SKILL.md) — The production pattern for text-to-image generation with Adobe Firefly's V3 asynchronous API. V3 async is t...
+2. [`firefly-generate-image-v3-async`](../firefly-generate-image-v3-async/SKILL.md) — The production pattern for text-to-image generation with Adobe Firefly's V3 asynchronous API (`/v3/images/g...
 3. [`photoshop-api-composition`](../photoshop-api-composition/SKILL.md) — The orchestration pattern for production-grade campaign assembly. When the asset pipeline involves Firefly-...
 4. [`photoshop-api-actions`](../photoshop-api-actions/SKILL.md) — Run Photoshop operations on the server. The Photoshop API exposes the same operation surface that the deskt...
 5. [`firefly-brand-guardrails`](../firefly-brand-guardrails/SKILL.md) — The compliance layer for production generative pipelines. Base Firefly is commercially-safe at the model le...
@@ -210,7 +210,7 @@ Each track maps a real user intent to an ordered reading list. Pick the one clos
 
 | Skill | Purpose |
 |---|---|
-| [`firefly-generate-image-v3-async`](../firefly-generate-image-v3-async/SKILL.md) | The production pattern for text-to-image generation with Adobe Firefly's V3 asynchronous API. V3 async is the right shape for every workl... |
+| [`firefly-generate-image-v3-async`](../firefly-generate-image-v3-async/SKILL.md) | The production pattern for text-to-image generation with Adobe Firefly's V3 asynchronous API (`/v3/images/generate-async`). V3 async is t... |
 
 ### genstudio
 
@@ -291,7 +291,7 @@ Each track maps a real user intent to an ordered reading list. Pick the one clos
 | [`firefly-cost-optimization`](../firefly-cost-optimization/SKILL.md) | production-architecture | The FinOps playbook for Firefly Services. Every FDE engagement eventually gets the question: "why is consumption 3× what we forecast?" Th... |
 | [`firefly-custom-models`](../firefly-custom-models/SKILL.md) | custom-models | Use brand-aligned generative models. Custom Models capture distinctive aesthetics, characters, objects, or compositional patterns from 10... |
 | [`firefly-expand-fill`](../firefly-expand-fill/SKILL.md) | image-editing | Two related but distinct APIs for modifying existing images. **Expand** grows the canvas and generates new content into the new area. **F... |
-| [`firefly-generate-image-v3-async`](../firefly-generate-image-v3-async/SKILL.md) | generate-image | The production pattern for text-to-image generation with Adobe Firefly's V3 asynchronous API. V3 async is the right shape for every workl... |
+| [`firefly-generate-image-v3-async`](../firefly-generate-image-v3-async/SKILL.md) | generate-image | The production pattern for text-to-image generation with Adobe Firefly's V3 asynchronous API (`/v3/images/generate-async`). V3 async is t... |
 | [`firefly-generate-similar`](../firefly-generate-similar/SKILL.md) | image-generation | Generate variations of a source image. This is the workhorse API for campaign asset multiplication — one approved hero becomes 10, 50, or... |
 | [`firefly-project-planner`](../firefly-project-planner/SKILL.md) | meta | The interactive entry point for anyone planning a Firefly Services engagement. If a user knows roughly what they want to build but doesn'... |
 | [`firefly-services-auth`](../firefly-services-auth/SKILL.md) | authentication | Obtains and refreshes IMS access tokens for Firefly Services using OAuth Server-to-Server credentials. Covers the token round-trip, the r... |
@@ -311,21 +311,19 @@ The 15 most recently updated skills (by git history) in the last 30 days:
 
 | Last updated | Skill | Category |
 |---|---|---|
-| 2026-06-22 | [`firefly-batch-pipeline`](../firefly-batch-pipeline/SKILL.md) | production-architecture |
-| 2026-06-22 | [`firefly-brand-guardrails`](../firefly-brand-guardrails/SKILL.md) | production-architecture |
-| 2026-06-22 | [`firefly-cost-optimization`](../firefly-cost-optimization/SKILL.md) | production-architecture |
-| 2026-06-22 | [`firefly-custom-models`](../firefly-custom-models/SKILL.md) | custom-models |
-| 2026-06-22 | [`firefly-expand-fill`](../firefly-expand-fill/SKILL.md) | image-editing |
-| 2026-06-22 | [`firefly-generate-image-v3-async`](../firefly-generate-image-v3-async/SKILL.md) | generate-image |
-| 2026-06-22 | [`firefly-generate-similar`](../firefly-generate-similar/SKILL.md) | image-generation |
-| 2026-06-22 | [`firefly-project-planner`](../firefly-project-planner/SKILL.md) | meta |
-| 2026-06-22 | [`firefly-services-auth`](../firefly-services-auth/SKILL.md) | authentication |
-| 2026-06-22 | [`firefly-services-bootstrap`](../firefly-services-bootstrap/SKILL.md) | project-initialization |
-| 2026-06-22 | [`firefly-services-rate-limits`](../firefly-services-rate-limits/SKILL.md) | production-architecture |
-| 2026-06-22 | [`firefly-services-storage-refs`](../firefly-services-storage-refs/SKILL.md) | storage |
-| 2026-06-22 | [`firefly-services-troubleshoot`](../firefly-services-troubleshoot/SKILL.md) | troubleshooting |
-| 2026-06-22 | [`firefly-video-model`](../firefly-video-model/SKILL.md) | video |
-| 2026-06-22 | [`genstudio-extensibility-scaffold`](../genstudio-extensibility-scaffold/SKILL.md) | genstudio |
+| 2026-08-10 | [`firefly-cost-optimization`](../firefly-cost-optimization/SKILL.md) | production-architecture |
+| 2026-08-10 | [`firefly-expand-fill`](../firefly-expand-fill/SKILL.md) | image-editing |
+| 2026-08-10 | [`firefly-generate-image-v3-async`](../firefly-generate-image-v3-async/SKILL.md) | generate-image |
+| 2026-08-10 | [`firefly-generate-similar`](../firefly-generate-similar/SKILL.md) | image-generation |
+| 2026-08-10 | [`firefly-services-auth`](../firefly-services-auth/SKILL.md) | authentication |
+| 2026-08-10 | [`firefly-services-bootstrap`](../firefly-services-bootstrap/SKILL.md) | project-initialization |
+| 2026-08-10 | [`firefly-services-rate-limits`](../firefly-services-rate-limits/SKILL.md) | production-architecture |
+| 2026-08-10 | [`firefly-services-storage-refs`](../firefly-services-storage-refs/SKILL.md) | storage |
+| 2026-08-10 | [`firefly-services-troubleshoot`](../firefly-services-troubleshoot/SKILL.md) | troubleshooting |
+| 2026-08-10 | [`firefly-video-model`](../firefly-video-model/SKILL.md) | video |
+| 2026-08-10 | [`lightroom-api-batch`](../lightroom-api-batch/SKILL.md) | lightroom-api |
+| 2026-08-10 | [`photoshop-api-actions`](../photoshop-api-actions/SKILL.md) | photoshop-api |
+| 2026-08-10 | [`photoshop-api-composition`](../photoshop-api-composition/SKILL.md) | photoshop-api |
 
 ## External skills (auto-discovered)
 
@@ -340,13 +338,15 @@ FocusGTS and not redistributed.
 
 | Skill | Category | Last commit | Source |
 |---|---|---|---|
-| [`adobe-batch-edit-photos`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-batch-edit-photos/SKILL.md) | uncategorized | 2026-07-09 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-batch-edit-photos/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-batch-edit-photos/SKILL.md) |
-| [`adobe-create-pdfs-from-data`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-pdfs-from-data/SKILL.md) | uncategorized | 2026-07-09 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-pdfs-from-data/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-pdfs-from-data/SKILL.md) |
-| [`adobe-create-social-variations`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-social-variations/SKILL.md) | uncategorized | 2026-07-09 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-social-variations/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-social-variations/SKILL.md) |
-| [`adobe-design-from-template`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-design-from-template/SKILL.md) | uncategorized | 2026-07-09 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-design-from-template/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-design-from-template/SKILL.md) |
-| [`adobe-edit-quick-cut`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-edit-quick-cut/SKILL.md) | uncategorized | 2026-07-09 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-edit-quick-cut/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-edit-quick-cut/SKILL.md) |
-| [`adobe-resize-photos-and-videos`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-resize-photos-and-videos/SKILL.md) | uncategorized | 2026-07-09 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-resize-photos-and-videos/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-resize-photos-and-videos/SKILL.md) |
-| [`adobe-retouch-portraits`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-retouch-portraits/SKILL.md) | uncategorized | 2026-07-09 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-retouch-portraits/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-retouch-portraits/SKILL.md) |
+| [`adobe-batch-edit-photos`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-batch-edit-photos/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-batch-edit-photos/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-batch-edit-photos/SKILL.md) |
+| [`adobe-create-pdfs-from-data`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-pdfs-from-data/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-pdfs-from-data/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-pdfs-from-data/SKILL.md) |
+| [`adobe-create-social-variations`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-social-variations/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-social-variations/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-social-variations/SKILL.md) |
+| [`adobe-design-from-template`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-design-from-template/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-design-from-template/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-design-from-template/SKILL.md) |
+| [`adobe-edit-quick-cut`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-edit-quick-cut/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-edit-quick-cut/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-edit-quick-cut/SKILL.md) |
+| [`adobe-resize-photos-and-videos`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-resize-photos-and-videos/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-resize-photos-and-videos/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-resize-photos-and-videos/SKILL.md) |
+| [`adobe-retouch-portraits`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-retouch-portraits/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-retouch-portraits/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-retouch-portraits/SKILL.md) |
+| [`run-featured-workflow`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/run-workflow/skills/run-featured-workflow/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/run-workflow/skills/run-featured-workflow/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/run-workflow/skills/run-featured-workflow/SKILL.md) |
+| [`run-workflow`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/run-workflow/skills/run-workflow/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/run-workflow/skills/run-workflow/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/run-workflow/skills/run-workflow/SKILL.md) |
 
 
 ## How this skill is maintained
@@ -362,7 +362,7 @@ To add a new track, edit `config/planning-tracks.yml` and push. To add a new ski
 
 ## Provenance
 
-- Catalog generated: `2026-07-14T15:24:22.778Z`
+- Catalog generated: `2026-08-10T23:16:25.052Z`
 - Total skills indexed: 18 (plus this meta-skill)
 - Source: `scripts/catalog/build-catalog.ts`
 - Planning tracks source: `config/planning-tracks.yml`
