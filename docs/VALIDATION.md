@@ -18,9 +18,9 @@
 | `firefly-cost-optimization` | ✅ Proven (claim corrected) | Seed determinism refuted by live hash comparison — skill now teaches archive-the-artifact; immediate output-URL fetch confirmed |
 | `firefly-skills-catalog` | ✅ Validated (static + its own CI) | Meta-skill; no API claims. Regenerates via scheduled GitHub Action |
 | `firefly-project-planner` | ✅ Validated (static) | Meta-skill; no API claims; all cross-references verified |
-| `photoshop-api-actions` | 🟡 Pending fixture pass | Static-validated + quality/enum probes; full proof needs the PSD/.atn fixture suite (multi-action selection, duplicate layer names, font fallback) |
-| `photoshop-api-composition` | 🟡 Pending fixture pass | `sensei/mask` V1 EOL confirmed live (502); async `notify` block accepted at submission; full state-machine run needs fixtures |
-| `lightroom-api-batch` | 🟡 Pending fixture pass | TIFF-output rejection confirmed live; raw-file ingestion and multi-output proof needs fixtures |
+| `photoshop-api-actions` | ✅ Proven | Fixture suite run 2026-08-10: `.atn` playback with and without `actionName` both `succeeded`; text replacement via `characterStyles` proven (and `fontName` rejection captured — skill corrected: font changes are template-level); `quality` range violation captured; mixed smart-object+text structurally impossible (`input is required`). Boundary: duplicate-layer-name behavior not exercised (no fixture) |
+| `photoshop-api-composition` | ✅ Proven | Three-stage chain executed end-to-end over GCS signed URLs: document manifest (layer enumeration confirmed) → smart-object replace → Lightroom auto-tone on the rendered output — all `succeeded`. `sensei/mask` V1 EOL confirmed (502); async `notify` accepted at submission |
+| `lightroom-api-batch` | ✅ Proven | Auto-tone with dual JPEG+DNG outputs in one job — both `succeeded` (skill corrected: multi-output supported); `applyPreset` with hand-authored XMP `succeeded`; endpoint input-shape asymmetry documented; TIFF-output rejection confirmed. Boundary: raw-file (.CR2/.NEF) ingestion not exercised (no raw fixture) |
 | `firefly-custom-models` | ⏸ Held (entitlement) | `GET /v3/custom-models` confirmed live (skill corrected); generation proof requires a trained model, which this org does not have |
 | `firefly-brand-guardrails` | ⏸ Held (entitlement) | Layer-1 proof depends on custom-model access |
 | `firefly-batch-pipeline` | ⏸ Held (infrastructure) | Architecture pattern; full proof requires deploying the AWS reference stack |

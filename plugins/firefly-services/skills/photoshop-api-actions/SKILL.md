@@ -158,16 +158,12 @@ Text replacement preserves the original layer's font, position, and tracking unl
 |---|---|
 | `fontSize` | Point size |
 | `fontColor` | Color object — provide `rgb` (`red`/`green`/`blue`, integers 0–32768), or `cmyk`/`gray`/`lab` |
-| `fontName` | PostScript font name; must be available (see [Supported Fonts](https://github.com/AdobeDocs/photoshop-api-docs/blob/main/SupportedFonts.md)) |
 | `from` / `to` | Character index range the style applies to |
 | `orientation` | Text orientation (`horizontal` / `vertical`) |
 
-By default, specifying a font that is not available substitutes ArialMT and the job still succeeds (`options.manageMissingFonts` defaults to `useDefault`). Two controls change this:
+**Changing the font by name is not supported on the current schema** — live-verified 2026-08-10: `characterStyles[].fontName` is rejected at submission with `Additional property fontName is not allowed`. The layer keeps the font defined in the PSD; text replacement changes content and the styles listed above. If a different font is required, set it in the template PSD itself.
 
-- `options.manageMissingFonts: "fail"` — the job status becomes `failed`, with the missing-font details in the status `details` section. Use this to fail fast instead of shipping a substituted font.
-- `options.fonts` — an array of storage refs (`{href, storage}`) to custom font files needed by the document, letting you supply fonts that aren't in the supported list.
-
-Always validate against the fonts list.
+Font *availability* is a document-level concern: `options.manageMissingFonts` governs what happens when the PSD references a font the service doesn't have (`useDefault` substitutes ArialMT; `"fail"` fails the job), and `options.fonts` supplies custom font files as storage refs. Keep template fonts on the [supported list](https://github.com/AdobeDocs/photoshop-api-docs/blob/main/SupportedFonts.md) to avoid substitution surprises.
 
 ## Step 3 — Apply Photoshop Actions (.atn)
 

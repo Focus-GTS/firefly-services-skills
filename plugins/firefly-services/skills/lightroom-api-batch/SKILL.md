@@ -202,7 +202,7 @@ curl --silent -X POST 'https://image.adobe.io/lrService/autoTone' \
   }'
 ```
 
-`autoTone` supports a single output per job. When the customer wants both a delivery-ready JPEG and a processed DNG master, submit two jobs against the same source — one with `"type": "image/jpeg"`, one with `"type": "image/x-adobe-dng"`. Same source, same adjustments, two renditions.
+`autoTone` accepts multiple outputs in one job — live-verified 2026-08-10: a single submission with both `"type": "image/jpeg"` and `"type": "image/x-adobe-dng"` outputs completed with both renditions `succeeded`. One job, one set of adjustments, delivery JPEG and DNG master together. (Note the input-shape asymmetry across Lightroom endpoints, also live-verified: `autoTone` takes a flat `inputs: {href, storage}` object, while `presets` wraps it as `inputs: {source: {...}, presets: [...]}`.)
 
 ## Production Patterns
 
