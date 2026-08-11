@@ -311,6 +311,7 @@ The 15 most recently updated skills (by git history) in the last 30 days:
 
 | Last updated | Skill | Category |
 |---|---|---|
+| 2026-08-11 | [`firefly-video-model`](../firefly-video-model/SKILL.md) | video |
 | 2026-08-11 | [`lightroom-api-batch`](../lightroom-api-batch/SKILL.md) | lightroom-api |
 | 2026-08-11 | [`photoshop-api-actions`](../photoshop-api-actions/SKILL.md) | photoshop-api |
 | 2026-08-10 | [`firefly-cost-optimization`](../firefly-cost-optimization/SKILL.md) | production-architecture |
@@ -319,7 +320,6 @@ The 15 most recently updated skills (by git history) in the last 30 days:
 | 2026-08-10 | [`firefly-services-bootstrap`](../firefly-services-bootstrap/SKILL.md) | project-initialization |
 | 2026-08-10 | [`firefly-services-rate-limits`](../firefly-services-rate-limits/SKILL.md) | production-architecture |
 | 2026-08-10 | [`firefly-services-troubleshoot`](../firefly-services-troubleshoot/SKILL.md) | troubleshooting |
-| 2026-08-10 | [`firefly-video-model`](../firefly-video-model/SKILL.md) | video |
 | 2026-08-10 | [`firefly-expand-fill`](../firefly-expand-fill/SKILL.md) | image-editing |
 | 2026-08-10 | [`firefly-generate-similar`](../firefly-generate-similar/SKILL.md) | image-generation |
 | 2026-08-10 | [`firefly-services-auth`](../firefly-services-auth/SKILL.md) | authentication |
@@ -363,7 +363,7 @@ To add a new track, edit `config/planning-tracks.yml` and push. To add a new ski
 
 ## Provenance
 
-- Catalog generated: `2026-08-11T00:15:09.845Z`
+- Catalog generated: `2026-08-11T01:15:46.140Z`
 - Total skills indexed: 18 (plus this meta-skill)
 - Source: `scripts/catalog/build-catalog.ts`
 - Planning tracks source: `config/planning-tracks.yml`
