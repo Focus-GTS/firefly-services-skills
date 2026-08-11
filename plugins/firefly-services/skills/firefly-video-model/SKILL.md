@@ -260,9 +260,7 @@ Firefly Video is the **first commercially-safe AI video generation API**. It is 
 - Public-domain content
 - Openly-licensed content
 
-Output is covered by Adobe's IP indemnification for commercial use. This is the reason a Fortune-500 customer would choose Firefly Video over Runway, Sora, or open-source models — even with lower output quality, the IP indemnification is irreplaceable for commercial campaigns.
-
-Document this with the customer's legal team. The Firefly Video output is reviewable; the indemnification is contractual.
+For commercial campaigns, the commercial-safety posture is the deciding factor: the model's training-data provenance is what lets enterprise legal teams approve generated video for production use. IP indemnification for enterprise customers is defined in the customer's Adobe agreement — confirm scope with the account team and legal.
 
 ## Validate
 
