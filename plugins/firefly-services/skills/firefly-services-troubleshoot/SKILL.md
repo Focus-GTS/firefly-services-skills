@@ -1,6 +1,6 @@
 ---
 name: firefly-services-troubleshoot
-description: Diagnose and resolve Firefly Services error responses — 401 Unauthorized, 403 Forbidden, 429 Too Many Requests, 5xx, malformed prompts, asset-storage failures, region mismatches, and silent product-profile gates. Use whenever an API call returns a non-2xx response, the user says "Firefly is broken", "I'm getting a 401", "rate limited", "this used to work", "Firefly Services error", "InvalidStorageReference", "ContentValidationError", or pastes a Firefly error body. Returns a triage tree and the specific fix for the most common 30+ failure modes our consultants hit in production at enterprise customers.
+description: Diagnose and resolve Firefly Services error responses — 401 Unauthorized, 403 Forbidden, 429 Too Many Requests, 5xx, malformed prompts, asset-storage failures, region mismatches, and silent product-profile gates. Use whenever an API call returns a non-2xx response, the user says "Firefly is broken", "I'm getting a 401", "rate limited", "this used to work", "Firefly Services error", "InvalidStorageReference", "ContentValidationError", or pastes a Firefly error body. Returns a triage tree and the specific fix for the most common 30+ failure modes seen in production enterprise deployments.
 license: Apache-2.0
 compatibility: Requires a Firefly Services credential pair (`FIREFLY_SERVICES_CLIENT_ID`, `FIREFLY_SERVICES_CLIENT_SECRET`) and `curl` for verification round-trips. Works against `firefly-api.adobe.io` (Firefly) and `image.adobe.io` (Photoshop API, Lightroom API).
 allowed-tools: Bash(curl:*) Bash(jq:*) Read
@@ -11,7 +11,7 @@ metadata:
 
 # Firefly Services Troubleshoot
 
-A triage tree for Firefly Services failures, grounded in the failure modes our consultants hit in production across enterprise FDE engagements. Each entry includes the exact error signature, the underlying cause, and the verified fix.
+A triage tree for Firefly Services failures, grounded in failure modes seen in production enterprise deployments. Each entry includes the exact error signature, the underlying cause, and the verified fix.
 
 ## When to Use This Skill
 
@@ -68,7 +68,7 @@ or:
 | Step | Action | If still failing |
 |---|---|---|
 | 1.1 | Confirm `Authorization: Bearer <token>` header is present and not empty | Bug in calling code |
-| 1.2 | Decode the JWT at jwt.io — confirm `client_id` matches, `exp` is in future | Token is wrong or expired; refresh |
+| 1.2 | Decode the token locally (`echo "$TOKEN" | cut -d. -f2 | base64 -d | jq .` — see Quick-Reference below; never paste production tokens into third-party sites) — confirm `client_id` matches, `exp` is in future | Token is wrong or expired; refresh |
 | 1.3 | Re-request a fresh token (see `firefly-services-auth` §1) | Falls through to §2 — auth path works but Firefly rejects it |
 | 1.4 | Check that `X-Api-Key: $FIREFLY_SERVICES_CLIENT_ID` is also sent | Firefly requires *both* headers |
 | 1.5 | Verify the token was issued with `firefly_api` AND `ff_apis` scopes | Re-issue with correct scope string |
@@ -99,7 +99,7 @@ A common gotcha: the customer purchased "Firefly" but not "Firefly Services." Th
 
 **Symptom:** Response is HTTP 429, optionally with `Retry-After: <seconds>` header.
 
-Adobe Firefly API places **default rate limits** on the volume and frequency of API calls. Production default is approximately **4 requests per minute (RPM) per credential**. This is low; production workloads must request an increase.
+Adobe Firefly API places **default rate limits** on the volume and frequency of API calls. Defaults are conservative and org-specific — commonly cited around **4 requests per minute (RPM) per credential** for generate endpoints (verify the provisioned limit for your org). Production workloads typically need to request an increase.
 
 | Step | Action |
 |---|---|
@@ -109,7 +109,7 @@ Adobe Firefly API places **default rate limits** on the volume and frequency of 
 | 3.4 | Contact the customer's Adobe account manager to request a rate-limit increase |
 | 3.5 | If the limit can't be raised, batch and async — see `firefly-generate-image-v3-async` |
 
-High-volume V1 builds typically hit the 4-RPM ceiling within the first sprint. The production solution is an SQS-fronted queueing layer with dead-letter handling. That pattern is documented in `firefly-services-rate-limits`.
+High-volume V1 builds typically hit the default ceiling within the first sprint. The production solution is an SQS-fronted queueing layer with dead-letter handling. That pattern is documented in `firefly-services-rate-limits`.
 
 ## §4 — 400 Bad Request
 
@@ -119,7 +119,7 @@ Field-level schema violations (an invalid enum value, an unsupported size, an ou
 
 | Error | Cause | Fix |
 |---|---|---|
-| `validation_errors[]` entry on `size.width`/`size.height` | Width/height not in the allowed list | Use one of the supported `image3` output sizes: 2048x2048 and 1024x1024 (square 1:1), 2304x1792 (landscape 4:3), 1792x2304 (portrait 3:4), 2688x1536 (widescreen 16:9), 1344x768 (7:4), 1152x896 (9:7), 896x1152 (7:9) — see endpoint docs |
+| `validation_errors[]` entry on `size.width`/`size.height` | Width/height not in the allowed list | Use one of the documented `image3` output sizes: 2048x2048 and 1024x1024 (square 1:1), 2304x1792 (landscape 4:3), 1792x2304 (portrait 3:4), 2688x1536 (widescreen 16:9), 1344x768 (7:4), 1152x896 (9:7), 896x1152 (7:9). The API's accepted set is a superset of these — the live validation error additionally lists 1344x756 and 2688x1512 — see endpoint docs |
 | `validation_errors[]` entry on `prompt` | Empty or whitespace-only prompt | Validate prompt length client-side |
 | `"message": "Invalid style reference"` | Reference image was not uploaded via the storage endpoint | See `firefly-services-storage-refs` |
 | `validation_errors[].loc: ["body", "contentClass"]`, msg `"value is not a valid enumeration member; permitted: 'photo', 'art'"` | `contentClass` is `photo` or `art` only (V3); anything else is rejected | Set explicitly — the schema-violation family returns **400** `bad_request` with `validation_errors[]` |
@@ -230,9 +230,9 @@ A failing-but-previously-working Firefly integration usually traces to one of:
 1. **Token expired silently** — service has been running >24h with the same token. Refresh.
 2. **V2 endpoint deprecated** — migrate to V3 async path.
 3. **Adobe model version bumped** — output shape changed; check changelog at `developer.adobe.com/firefly-services/docs/firefly-api/release-notes/`.
-4. **Rate limit reduced** — Adobe reduces non-production credentials occasionally; check with account manager.
+4. **Provisioned limit changed** — quotas on non-production credentials can differ from production and may change; confirm the current provisioned limit with the Adobe account team.
 5. **JWT cert expired** — migrate to OAuth.
-6. **Custom model retired** — Adobe expires custom models after periods of inactivity.
+6. **Custom model expired** — custom models can expire per Adobe's retention policy; check the model registry.
 7. **Org credential rotated** — somebody on the customer side issued new credentials without telling the integration team.
 
 ## References

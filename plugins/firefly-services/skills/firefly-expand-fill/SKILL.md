@@ -1,8 +1,9 @@
 ---
 name: firefly-expand-fill
-description: Use Adobe Firefly's Generative Expand and Generative Fill APIs — when to use each, masking strategies, placement and aspect ratio control, prompt patterns for clean extension and inpainting, and the difference between filling versus replacing image regions. Use whenever the user mentions "generative expand", "extend canvas", "generative fill", "inpaint", "outpaint", "remove object", "replace background", "expand image", "fill image", "masking", "expand-async", "fill-async", or wants to grow / patch / modify an existing image. Encodes the production patterns for background extension on key-art assets and for brand-aligned background replacement in campaign creators.
+description: Use Adobe Firefly's Generative Expand and Generative Fill APIs — when to use each, masking strategies, placement and aspect ratio control, prompt patterns for clean extension and inpainting, and the difference between filling versus replacing image regions. Use whenever the user mentions "generative expand", "extend canvas", "generative fill", "inpaint", "outpaint", "remove object", "replace background", "expand image", "fill image", "masking", "expand-async", "fill-async", or wants to grow / patch / modify an existing image. Encodes production patterns for background extension on hero assets and for brand-aligned background replacement in high-volume template-driven campaign asset production.
 license: Apache-2.0
-compatibility: Requires `firefly_api`, `ff_apis` scopes. Endpoints: `firefly-api.adobe.io/v3/images/expand` and `/v3/images/fill`. Source images must be passed as storage refs.
+compatibility: >-
+  Requires `firefly_api`, `ff_apis` scopes. Endpoints: `firefly-api.adobe.io/v3/images/expand` and `/v3/images/fill`. Source images must be passed as storage refs.
 allowed-tools: Bash(curl:*) Bash(jq:*) Read Write Edit
 metadata:
   version: "1.0.0"
@@ -53,7 +54,7 @@ curl --silent -X POST 'https://firefly-api.adobe.io/v3/images/expand' \
   --data @- <<EOF
 {
   "image": {"source": {"uploadId": "$SOURCE_UPLOAD_ID"}},
-  "size": {"width": 2304, "height": 1280},
+  "size": {"width": 2688, "height": 1536},
   "prompt": "a sweeping desert landscape continuing into the distance",
   "placement": {
     "alignment": {"horizontal": "center", "vertical": "center"}
@@ -108,7 +109,7 @@ Common production use cases:
 |---|---|---|---|
 | 1024×1024 (1:1) | 1408×768 (11:6 landscape) | width 1408, height 768 | center, center |
 | 1024×1024 (1:1) | 768×1408 (6:11 portrait) | width 768, height 1408 | center, top (lower face) |
-| 1408×768 (key art) | 2304×1280 (cinematic) | width 2304, height 1280 | center, center |
+| 1408×768 (11:6 landscape) | 2688×1536 (16:9 widescreen) | width 2688, height 1536 | center, center |
 | 1024×1024 (square) | 1024×1792 (4:7 story portrait) | width 1024, height 1792 | center, top |
 
 For an exact 16:9 output, use the spec's canonical widescreen size, 2688×1536 (1536×2688 for the vertical counterpart) — 1408×768 is 11:6 (~1.83), close to but not exactly 16:9.
@@ -154,7 +155,7 @@ Note the mask shape: `image.mask` is a bare binary input (`{"uploadId": ...}` or
 
 The endpoint responds synchronously with `{ "size": {...}, "outputs": [{ "seed": ..., "image": { "url": ... } }] }` — no polling.
 
-Optional request fields worth knowing: `negativePrompt` (up to 1024 chars, describes what to avoid in the fill), `promptBiasingLocaleCode` (e.g. `"en-US"`, biases output toward regionally relevant content), and `seeds` (array, one per variation, for deterministic regeneration).
+Optional request fields worth knowing: `negativePrompt` (up to 1024 chars, describes what to avoid in the fill), `promptBiasingLocaleCode` (e.g. `"en-US"`, biases output toward regionally relevant content), and `seeds` (array, one per variation — reusing a seed biases regeneration toward a consistent composition, but does not guarantee byte-identical output; archive the returned artifact if you need an exact copy).
 
 ### The `prompt` field for fill
 
@@ -173,33 +174,33 @@ Prompts describe what should appear *in the masked region*. The unmasked region 
 |---|---|---|
 | Manual mask | Photoshop, image editor | One-off creative work |
 | Programmatic mask | `sharp`, `pillow` | Geometric regions (top half, left third) |
-| Subject detection | Photoshop Create Mask API (`POST /sensei/mask`) or custom segmentation | Replace background, isolate subject |
+| Subject detection | Photoshop Remove Background API (`POST /v2/remove-background` with `mode: "mask"`) or custom segmentation | Replace background, isolate subject |
 | Color-key mask | `sharp` threshold | Replace a specific colored region |
 | AI segmentation | SAM (Segment Anything), Mediapipe | Production segmentation pipelines |
 
-For high-volume workflows (background extension on hundreds of key-art assets daily), masks are generated programmatically from subject detection — never by hand.
+For high-volume template-driven campaign asset production (background extension at batch volume), masks are generated programmatically from subject detection — never by hand.
 
 ## Combining Expand + Fill in a Pipeline
 
 A common production pipeline:
 
 ```
-Source key-art (1408×768)
-  ↓ Expand (to 2304×1280, prompt extending the scene)
+Source hero asset (1408×768)
+  ↓ Expand (to 2688×1536, prompt extending the scene)
 Expanded image
   ↓ Fill (mask covers text area, prompt: "clean background")
-Cleaned cinematic version
+Cleaned widescreen version
   ↓ Apply Photoshop API actions (text overlay, layer compositing)
 Final asset
 ```
 
-This is the canonical key-art generation pattern condensed. Each stage is a separate API call (expand and fill respond synchronously; Photoshop actions are async jobs); the pipeline is queue-fronted (see `firefly-services-rate-limits`).
+This is the template-driven compositing pipeline condensed. Each stage is a separate API call (expand and fill respond synchronously; Photoshop actions are async jobs); the pipeline is queue-fronted (see `firefly-services-rate-limits`).
 
 ## Production Patterns
 
 ### Pattern: Multi-aspect generation from one source
 
-Given one square key art, generate landscape + portrait + story formats:
+Given one square hero asset, generate landscape + portrait + story formats:
 
 ```js
 const aspects = [
@@ -227,14 +228,14 @@ For brand-campaign-creator background swaps:
 
 ```
 Source image
-  ↓ Photoshop Create Mask API (POST image.adobe.io/sensei/mask) → mask (subject white, background black)
+  ↓ Photoshop Remove Background API (POST image.adobe.io/v2/remove-background, mode: "mask") → mask (subject white, background black)
   ↓ Invert mask (subject black, background white) — Sharp/Pillow
 Fill request with inverted mask
   ↓ prompt: "<brand-aligned background>"
 Output: subject preserved, new background
 ```
 
-The Create Mask call is an async sensei job — poll `GET /sensei/status/{jobId}` for completion before moving on. The inversion step is critical — the Create Mask API gives you the subject mask; for background replacement you need the inverse.
+The remove-background call is an async job — poll the status URL it returns before moving on. V2 remove-background hosts the result itself: the grayscale mask arrives as an Adobe pre-signed `destination.url` in the job status (it supersedes the V1 `sensei/mask` family). The inversion step is critical — `mode: "mask"` gives you the subject mask; for background replacement you need the inverse.
 
 ## Validate
 
@@ -262,7 +263,7 @@ Expand/Fill pipelines are production-ready when:
 
 - `firefly-services-storage-refs` — Mask + source upload
 - `firefly-generate-image-v3-async` — Same async pattern
-- `photoshop-api-actions` — For automated mask generation (Create Mask API, `POST /sensei/mask`)
+- `photoshop-api-actions` — For automated mask generation (`POST /v2/remove-background` with `mode: "mask"`)
 - `firefly-services-rate-limits` — For batch pipelines
 
 ## References

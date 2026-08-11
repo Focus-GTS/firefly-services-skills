@@ -4,7 +4,7 @@
 # The catalog generator clones each source (or fetches updates if already
 # cloned), walks its SKILL.md files, applies the relevance filter, and renders
 # the matching skills into the catalog's "External skills" section with a
-# clear "indexed not endorsed" disclaimer.
+# "maintained by their respective publishers; listed for navigation" note.
 #
 # To add a new source: append an entry below and re-run `npm run catalog:build`.
 # The daily GitHub Actions cron picks up new sources automatically on the
@@ -39,5 +39,4 @@ sources:
     notes: |
       Adobe's official skill repository. Listed here so the catalog reflects
       Adobe-published Firefly-related skills the moment they ship, without
-      manual intervention. Indexed for navigation only — not endorsed by
-      FocusGTS and not redistributed.
+      manual intervention. Maintained by Adobe; listed for navigation.

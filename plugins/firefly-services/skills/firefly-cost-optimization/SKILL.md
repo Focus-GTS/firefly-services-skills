@@ -11,7 +11,7 @@ metadata:
 
 # Firefly Cost Optimization
 
-The FinOps playbook for Firefly Services. Every FDE engagement eventually gets the question: "why is consumption 3× what we forecast?" The answer is almost always one of six causes, all of which are preventable with the patterns below.
+The FinOps playbook for Firefly Services. Production deployments eventually get the question: "why is consumption 3× what we forecast?" The answer is almost always one of six causes, all of which are preventable with the patterns below.
 
 This skill encodes how to think about Firefly cost: where it actually goes, what knobs reduce it, what the cost shape of each endpoint looks like, and the debugging sequence that resolves a consumption surprise in hours instead of weeks.
 
@@ -34,8 +34,8 @@ API consumption breaks down into five buckets. Memorize the order — it tells y
 
 | Bucket | Typical share of spend | What drives it |
 |---|---|---|
-| 1. Base generation calls | 50-70% | One credit per output image; volume × variants |
-| 2. Retry storms | 5-25% (variable) | Retries that should have been client-side fixes; the #1 surprise |
+| 1. Base generation calls | 50-70% | Typically one credit per output image (verify current rates); volume × variants |
+| 2. Retry storms | 5-25% (variable) | Retries that should have been client-side fixes; the most common surprise |
 | 3. Custom model training | 5-15% | One-time per model; amortized across the model's lifetime |
 | 4. Photoshop / Lightroom operations | 5-15% | Usually metered differently; check the enterprise agreement |
 | 5. Storage and bandwidth | 1-5% | S3 / equivalent; usually a rounding error compared to generation |
@@ -162,11 +162,13 @@ Each output in the response carries the `seed` (singular) that produced it. Stor
 
 Both produce on-brand output. The cost shapes are different.
 
-| Lever | Up-front cost | Per-generation cost | Best for |
+| Lever | Up-front cost | Per-generation cost* | Best for |
 |---|---|---|---|
-| Custom model | 1 model training (hours, low credits) | 1 credit per generation (same as base) | High-volume brand-consistent output; iconography; product subject |
-| Style reference | $0 | 1 credit + bandwidth/storage for the reference | Low-volume / one-off brand-styled output; rapid prototyping |
-| Structure reference | $0 | 1 credit + bandwidth/storage for the reference | Composition control independent of style |
+| Custom model | 1 model training (hours, low credits) | Per-generation credit cost, same order as base generation | High-volume brand-consistent output; iconography; product subject |
+| Style reference | $0 | Base generation credit + bandwidth/storage for the reference | Low-volume / one-off brand-styled output; rapid prototyping |
+| Structure reference | $0 | Base generation credit + bandwidth/storage for the reference | Composition control independent of style |
+
+\* Credit consumption rates are plan- and feature-dependent and change over time — confirm current rates in the customer's Adobe enterprise agreement (see the compatibility note in this skill's frontmatter).
 
 Break-even math: a custom model amortizes once you exceed ~hundreds of generations against the same style. Below that, style references are cheaper. Above that, the model wins — and as a bonus, the model is faster (no reference upload per call) and more consistent than reference-only.
 

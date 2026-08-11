@@ -118,7 +118,7 @@ A consolidated, deduplicated reading list combining all matched tracks. Group by
 
 Three to five concrete decisions the team should make in week 1, based on the user's answers:
 
-- **Auth pattern**: OAuth Server-to-Server (always — JWT is dead)
+- **Auth pattern**: OAuth Server-to-Server (always — JWT reached end-of-life June 2025)
 - **Credential isolation**: per-customer vs per-environment
 - **Storage backend**: where source assets live, where outputs go (S3 / Azure Blob / GCS / Dropbox)
 - **Rate-limit posture**: default quota vs request raise vs queue-fronted architecture

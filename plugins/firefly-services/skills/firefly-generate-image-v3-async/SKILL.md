@@ -1,6 +1,6 @@
 ---
 name: firefly-generate-image-v3-async
-description: Generate images with the Adobe Firefly V3 asynchronous API — job submission, status polling, webhook callbacks, prompt structure, content class, style and structure references, seed control, multi-variation results, and the migration from V2 sync to V3 async. Use whenever the user wants to "generate an image with Firefly", "text-to-image", "Firefly V3", "async generate", "polling", "jobId", "statusUrl", or upgrades from V2 sync. Returns the production pattern for the highest-volume Firefly workload — including the polling cadence that does not get rate-limited and the webhook pattern that scales to thousands of concurrent jobs.
+description: Generate images with the Adobe Firefly V3 asynchronous API — job submission, status polling, webhook callbacks, prompt structure, content class, style and structure references, seed control, multi-variation results, and the migration from V2 sync to V3 async. Use whenever the user wants to "generate an image with Firefly", "text-to-image", "Firefly V3", "async generate", "polling", "jobId", "statusUrl", or upgrades from V2 sync. Returns the production pattern for the highest-volume Firefly workload — including a polling cadence that avoided rate limiting in live testing and a webhook design pattern for scaling to thousands of concurrent jobs.
 license: Apache-2.0
 compatibility: Requires Firefly Services credentials and `firefly_api`, `ff_apis` scopes. Async V3 generation runs at `firefly-api.adobe.io/v3/images/generate-async` and returns an async job (jobId + statusUrl); the synchronous variant is `/v3/images/generate`. Node 18+ or any HTTP client with retry support.
 allowed-tools: Bash(curl:*) Bash(jq:*) Read Write Edit
@@ -39,7 +39,7 @@ Do **NOT** use this skill when:
 | Recommended for production | No | Yes |
 | Recommended for one-shot CLI | Acceptable | Acceptable |
 
-**Default to V3 async for everything.** The only acceptable reason to use sync is a one-shot script where the user is watching the terminal. The sync endpoint returns `200` with the finished `{size, outputs[]}` body directly — no jobId. The async variant (`/v3/images/generate-async`) is documented in Adobe's [async API guide](https://developer.adobe.com/firefly-services/docs/firefly-api/guides/how-tos/using-async-apis/); the bundled `@adobe/firefly-apis` SDK spec covers only the sync path, so use raw HTTP for async submission.
+**Default to V3 async for everything.** The only acceptable reason to use sync is a one-shot script where the user is watching the terminal. The sync endpoint returns `200` with the finished `{size, outputs[]}` body directly — no jobId. The async variant (`/v3/images/generate-async`) is documented in Adobe's [async API guide](https://developer.adobe.com/firefly-services/docs/firefly-api/guides/how-tos/using-async-apis/); as of this writing the bundled `@adobe/firefly-apis` SDK spec covers only the sync path, so use raw HTTP for async submission.
 
 ## The Async Workflow
 
@@ -73,7 +73,7 @@ Response:
 
 ```json
 {
-  "jobId": "urn:ff:jobs:eso851211:86ffe2ea-d765-4bd3-b2fd-568ca8fc36ac",
+  "jobId": "urn:ff:jobs:example:00000000-0000-4000-8000-000000000000",
   "statusUrl": "https://firefly-api.adobe.io/v3/status/urn:ff:jobs:...",
   "cancelUrl": "https://firefly-api.adobe.io/v3/cancel/urn:ff:jobs:..."
 }
@@ -120,7 +120,7 @@ Full request shape with all common fields:
 | 1792×2304 | Portrait (3:4) |
 | 896×1152 | Portrait (7:9) |
 
-Other dimensions are rejected with a 400 `bad_request` whose message enumerates the currently valid sizes — live-verified 2026-08-10: `Size must be one of {(2688, 1536), (1344, 756), (896, 1152), (1344, 768), (2688, 1512), (2304, 1792), (1152, 896), (2048, 2048), (1792, 2304), (1024, 1024)}`. Pick from this list, or generate at the nearest match and crop in post.
+Other dimensions are rejected with a 400 `bad_request` whose message enumerates the currently valid sizes — live-verified 2026-08-10: `Size must be one of {(2688, 1536), (1344, 756), (896, 1152), (1344, 768), (2688, 1512), (2304, 1792), (1152, 896), (2048, 2048), (1792, 2304), (1024, 1024)}`. Note the live error enumerates 10 tuples — a superset of the documented sizes in the table above (it additionally accepts 1344×756 and 2688×1512); the table shows Adobe's documented set. Prefer the documented sizes, or generate at the nearest match and crop in post.
 
 ### Content class
 
@@ -134,7 +134,7 @@ If omitted, Firefly auto-detects the content class from the prompt; setting it e
 ### Variations and seeds
 
 - `numVariations`: 1-4. Production typically uses 2-4 to give downstream selection logic options.
-- `seeds`: array of integers. Same seed + same prompt + same model = deterministic output. Use seeds for A/B testing or reproducibility audits. If provided alongside `numVariations`, the seed count must equal `numVariations`.
+- `seeds`: array of integers. The same seed with the same prompt and model biases generation toward a consistent composition, but does not guarantee byte-identical output (live-verified: identical seeded requests produced different bytes). Use seeds for near-reproducibility and A/B comparisons, and archive the actual output artifact when you need an audit trail. If provided alongside `numVariations`, the seed count must equal `numVariations`.
 
 ## Step 3 — Poll for Completion
 
@@ -185,9 +185,9 @@ async function pollJob(statusUrl, accessToken, clientId, { intervalMs = 1000, ma
 
 Polling every 250ms or faster is wasteful — typical Firefly V3 jobs complete in 3-10 seconds. Sub-second polling will not make them complete faster.
 
-### Polling does not consume generation quota
+### Polling and generation limits
 
-Status calls are billed and rate-limited separately from generation. You can poll aggressively without burning your generation rate limit. Production worry is wasted compute, not quota.
+In live testing, status polls did not trigger generate-endpoint 429s. Adobe does not publicly document how status calls are billed or rate-limited relative to generation (treatment may be org/contract-dependent — verify for your org), so keep polling to the 1-2s cadence above rather than assuming polls are free. The production concern with fast polling is wasted compute either way.
 
 ## Step 4 — Webhook Callbacks (Preferred at Scale)
 
@@ -205,18 +205,18 @@ For production batch workloads, webhooks beat polling. The pattern is: pass a ca
 }
 ```
 
-Adobe POSTs to the webhook URL with the job result body. Validate the HMAC signature in the `X-Adobe-Signature` header before trusting the payload.
+In this design shape, the service POSTs the job result body to the callback URL. Validate an HMAC signature over the body before trusting the payload — the header name and signature scheme must be confirmed against current Adobe documentation.
 
-Webhook pattern requires:
+A webhook receiver in this pattern should provide:
 
 | Component | Detail |
 |---|---|
-| Public URL | Reachable from Adobe IP ranges |
-| HMAC validation | SHA-256 over the body with the shared secret |
-| Idempotency | Adobe may retry; jobs should be keyed by `jobId` |
-| Acknowledge with 2xx | Within 30s; otherwise Adobe retries |
+| Public URL | Reachable from the calling service |
+| HMAC validation | e.g. SHA-256 over the body with the shared secret (confirm scheme with Adobe docs) |
+| Idempotency | Callbacks may be delivered more than once; key jobs by `jobId` |
+| Prompt 2xx acknowledgment | Respond quickly; treat delivery timing and retry semantics as unspecified until confirmed |
 
-If the webhook fails repeatedly, Adobe falls back to making the result retrievable via the original `statusUrl`. Always implement polling fallback for robustness.
+Regardless of webhook behavior, the result remains retrievable via the original `statusUrl` — always implement polling fallback for robustness.
 
 ## Step 5 — Read the Result
 
@@ -330,14 +330,14 @@ For campaigns where you want choice:
 3. Downstream selection logic (human or automated) picks 1
 4. Audit which combinations win for future prompt tuning
 
-This is the standard pattern for key-art generation in enterprise campaign pipelines — variations give downstream creative teams options without re-running the pipeline.
+This is the standard pattern for high-volume template-driven campaign asset production — variations give downstream creative teams options without re-running the pipeline.
 
 ## Validate
 
 A correctly wired V3 async pipeline:
 
 1. Submits jobs and persists `jobId` before any subsequent work
-2. Polls with 1-2s cadence, or uses webhook callbacks
+2. Polls with 1-2s cadence (webhook callbacks, where available and confirmed against current docs, are an alternative — see Step 4)
 3. Honors `statusUrl` from the submission response — does not hardcode URLs
 4. Downloads result URLs within 1 hour and re-hosts in your own bucket
 5. Has retry-with-backoff on submission (covered by `firefly-services-rate-limits`)
@@ -351,7 +351,7 @@ A correctly wired V3 async pipeline:
 - **Webhook never fires:** Adobe was unable to reach the URL. Test with a `curl -X POST` from outside your VPC. Fall back to polling.
 - **Job stuck in `running` for >5 minutes:** Cancel via `cancelUrl` and resubmit. Adobe-side jobs almost always complete in under 30s; 5+ minutes is a sign something is wrong.
 - **`outputs` array is empty on success:** Content safety filtered all variations. Rephrase the prompt — see `firefly-services-troubleshoot` §6.
-- **Different output between identical requests:** Set `seeds: [<int>]` for determinism.
+- **Different output between identical requests:** Expected — generation is not byte-deterministic even with a fixed seed. Set `seeds: [<int>]` to bias toward a consistent composition, and archive outputs you need to reproduce exactly.
 
 ## Chaining with Other Skills
 

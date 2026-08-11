@@ -1,8 +1,10 @@
 ---
 name: firefly-custom-models
-description: Train, manage, and invoke Adobe Firefly Custom Models — subject vs style models, training data preparation (10-30 reference images), training submission and polling, asset ID management, generation with `customModelId` and `x-model-version: image3_custom`, retraining cadence, and brand-aligned generation at scale. Use whenever the user mentions "custom model", "brand model", "train a model", "fine-tune Firefly", "subject model", "style model", "Custom Models API", `customModelId`, or describes iconography / brand-asset / character generation that requires consistency. Encodes the production pattern for brand iconography workflows where custom-model output dramatically reduces design cycle time.
+description: >-
+  Train, manage, and invoke Adobe Firefly Custom Models — subject vs style models, training data preparation (10-30 reference images), training submission and polling, asset ID management, generation with `customModelId` and `x-model-version: image3_custom`, retraining cadence, and brand-aligned generation at scale. Use whenever the user mentions "custom model", "brand model", "train a model", "fine-tune Firefly", "subject model", "style model", "Custom Models API", `customModelId`, or describes iconography / brand-asset / character generation that requires consistency. Encodes the production pattern for brand iconography workflows where custom-model output dramatically reduces design cycle time.
 license: Apache-2.0
-compatibility: Requires `firefly_enterprise` scope on the access token. Customer must hold a Custom Models entitlement (sold separately, typically as a bundle of 100 model slots). Models are trained in the Firefly web app; generation consumes them via `firefly-api.adobe.io/v3/images/generate` with `customModelId` and `x-model-version: image3_custom`.
+compatibility: >-
+  Requires `firefly_enterprise` scope on the access token. Customer must hold a Custom Models entitlement (sold separately, typically as a bundle of 100 model slots). Models are trained in the Firefly web app; generation consumes them via `firefly-api.adobe.io/v3/images/generate` with `customModelId` and `x-model-version: image3_custom`.
 allowed-tools: Bash(curl:*) Bash(jq:*) Read Write Edit
 metadata:
   version: "1.0.0"

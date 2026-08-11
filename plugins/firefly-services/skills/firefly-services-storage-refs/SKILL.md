@@ -2,7 +2,8 @@
 name: firefly-services-storage-refs
 description: Asset storage and reference patterns for Adobe Firefly Services — Upload Endpoint, pre-signed URLs (S3/Azure/Dropbox), input source references for generative-fill / expand / similar / Photoshop / Lightroom, output destination references, pre-signed URL expiry, and the producer/consumer split for storage refs in queue-fronted workloads. Use whenever the user mentions "storage reference", "uploadId", "image ID", "pre-signed URL", "InvalidStorageReference", "how do I pass an image to Firefly", "S3 bucket", "Azure blob", or hits a 400312 error. Covers both the Firefly Upload Endpoint (returns an image ID) and the pre-signed-URL pattern (read from your own bucket).
 license: Apache-2.0
-compatibility: Works with all Firefly Services endpoints that accept image references — Generate Similar, Expand, Fill, Photoshop API (input/output), Lightroom API. Cloud storage support: AWS S3, Azure Blob, Dropbox (via signed URLs; Google Cloud Storage is not on the Firefly input-URL allowlist).
+compatibility: >-
+  Works with all Firefly Services endpoints that accept image references — Generate Similar, Expand, Fill, Photoshop API (input/output), Lightroom API. Cloud storage support: AWS S3, Azure Blob, Dropbox (via signed URLs; as of this writing, Google Cloud Storage is not a documented Firefly input source).
 allowed-tools: Bash(curl:*) Bash(aws:*) Bash(az:*) Read Write Edit
 metadata:
   version: "1.0.0"
@@ -70,7 +71,7 @@ Pass to Firefly: {"image": {"source": {"url": "https://your-bucket.s3..."}}}
 - The same asset will be referenced by multiple Firefly calls (don't re-upload)
 - You need long-term retention of the source asset
 
-**Supported sources:** the Firefly API validates the input-URL host against an allowlist — `amazonaws.com` (AWS S3), `windows.net` (Azure Blob), `dropboxusercontent.com` (Dropbox). Google Cloud Storage URLs (`storage.googleapis.com`) are not on the allowlist and are rejected; for assets in GCS, copy to an allowlisted store or use the Upload Endpoint (Pattern A).
+**Supported sources:** Adobe documents pre-signed URL support for AWS S3 (`amazonaws.com`), Azure Blob (`windows.net`), and Dropbox (`dropboxusercontent.com`). In live testing, a Google Cloud Storage pre-signed URL (`storage.googleapis.com`) was rejected (422 "The file with given presigned url could not be reached") — treat GCS as unsupported for Firefly inputs as of this writing, and verify against current Adobe docs. For assets in GCS, copy to a supported store or use the Upload Endpoint (Pattern A).
 
 ## Pattern A — Upload Endpoint Workflow
 
@@ -255,7 +256,7 @@ The `storage` field distinguishes the location type. The Photoshop and Lightroom
 | `azure` | Azure Blob (SAS URL) |
 | `dropbox` | Dropbox |
 
-## Pre-signed URL Expiry — The #1 Production Gotcha
+## Pre-signed URL Expiry — A Common Production Gotcha
 
 Pre-signed URLs expire. For long-running async jobs this is a real failure mode.
 
@@ -289,7 +290,7 @@ This pattern eliminates an entire class of intermittent failure that almost alwa
 
 ## Bucket / Container Configuration
 
-For pre-signed URL pattern, the bucket must allow GET (and PUT for outputs) from Adobe IP ranges. Don't try to lock down by IP — Adobe's backend hits change. Rely on the pre-signed URL itself as the authentication mechanism.
+For the pre-signed URL pattern, the bucket must allow GET (and PUT for outputs) from Adobe's backend. Adobe does not publish a stable IP range for these fetches (as of this writing), so IP allowlisting is not a reliable mechanism here — rely on the pre-signed URL itself as the authentication mechanism.
 
 | Setting | Value |
 |---|---|
@@ -335,10 +336,10 @@ Storage references are correctly wired when:
 - **`InvalidStorageReference` (400312):** Either the input `uploadId` is stale (input upload IDs are valid 7 days) or the pre-signed URL is expired / returns non-200 / returns wrong content-type. Re-sign just before the call. (Note: this 7-day input TTL is separate from *output* pre-signed result URLs, which expire ~1 hour.)
 - **Upload returns 413 Payload Too Large:** Image exceeds endpoint limit (~8MB for most generate endpoints). Downscale before uploading.
 - **Upload returns 415 Unsupported Media Type:** `Content-Type` is missing or wrong. Must match the actual format (`image/jpeg`, `image/png`, `image/webp`).
-- **Adobe can't fetch the pre-signed URL:** Test by `curl -I <url>` from anywhere. If you get a 200, Adobe can too. If 403, the signing failed; regenerate.
+- **Adobe can't fetch the pre-signed URL:** Test with a range-limited GET — `curl -s -o /dev/null -w '%{http_code}' -r 0-0 '<url>'` — rather than `curl -I`: a HEAD request against a GET-signed S3 URL returns 403 because the signature covers the HTTP method, producing false alarms on valid URLs. A 200 from an external network is strong evidence Adobe's backend can fetch it too. A 403 on the range-limited GET means the signing failed; regenerate.
 - **Pre-signed URL works for input but Photoshop API can't write to output:** the URL was signed for GET. `aws s3 presign` generates GET-only URLs — generate PUT URLs via the SDK (`getSignedUrl` with `PutObjectCommand`). GET URLs cannot be used as PUT destinations.
 - **Azure returns 403 to Firefly:** SAS signing parameters differ from AWS. Use Azure's own signing tool (`az storage blob generate-sas`) — not S3-style query parameters.
-- **GCS URL rejected:** Google Cloud Storage is not an allowlisted **Firefly** input source (`amazonaws.com`, `windows.net`, `dropboxusercontent.com` are). Copy the asset to an allowlisted store or use the Upload Endpoint. Note the asymmetry: the **Photoshop and Lightroom APIs** accept GCS pre-signed URLs fine via `storage: "external"` — any reachable signed HTTPS URL works there (validated in production against the live API). The allowlist applies only to the Firefly image-reference family.
+- **GCS URL rejected:** As of this writing, Google Cloud Storage is not a documented **Firefly** input source (S3 `amazonaws.com`, Azure `windows.net`, and Dropbox `dropboxusercontent.com` are), and a GCS pre-signed URL was rejected in live testing (422 "could not be reached"). Copy the asset to a supported store or use the Upload Endpoint. Note the asymmetry: the **Photoshop and Lightroom APIs** accept GCS pre-signed URLs via `storage: "external"` — any reachable signed HTTPS URL works there (validated against the live API). This restriction applies only to the Firefly image-reference family.
 
 ## Chaining with Other Skills
 

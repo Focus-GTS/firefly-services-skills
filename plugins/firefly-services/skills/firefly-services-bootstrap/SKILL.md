@@ -26,7 +26,7 @@ Use this skill when:
 Do **NOT** use this skill when:
 - A valid `FIREFLY_SERVICES_ACCESS_TOKEN` already exists in the current session
 - The user is debugging a 401/403/429 — use `firefly-services-troubleshoot`
-- The user is migrating from JWT credentials — JWT reached end-of-life on June 30, 2025 and certificates expire by March 1, 2026; rebuild with OAuth Server-to-Server instead
+- The user is migrating from JWT credentials — JWT reached end-of-life on June 30, 2025 and all certificates expired March 1, 2026, so any remaining JWT integration is already non-functional; rebuild with OAuth Server-to-Server instead
 
 ## Prerequisites
 
@@ -128,11 +128,11 @@ aio console workspace api add \
   --json
 ```
 
-Ask the org admin for the profile name. There is no public catalog.
+Profile names are org-specific, so get the name from the customer's org admin.
 
 ## Step 4 — Provision OAuth Server-to-Server credentials
 
-Adobe deprecated JWT credentials on June 30, 2025; all certificates expire by March 1, 2026. Use **OAuth Server-to-Server** exclusively for any new project — even when migrating an existing one. Do not maintain mixed credential types.
+Adobe deprecated JWT credentials on June 30, 2025; all certificates expired March 1, 2026. Use **OAuth Server-to-Server** exclusively for any new project — even when migrating an existing one. Do not maintain mixed credential types.
 
 Credential creation is a Developer Console UI step — the `aio console` plugin manages projects, workspaces, and API subscriptions, but has no credential-creation command. Deep-link straight to the selected project/workspace:
 
@@ -184,7 +184,7 @@ Export the token:
 export FIREFLY_SERVICES_ACCESS_TOKEN=<access_token>
 ```
 
-If the curl call returns `invalid_client`, the `client_secret` is wrong. If it returns `unauthorized_client`, the workspace is not subscribed to the Firefly Services API (Step 3 was skipped or incomplete). Scope-list mistakes are sneaky: IMS silently ignores unrecognized scope names (live-verified — a bogus scope still returns a normal-looking token), so a typo yields a token that *looks* fine but lacks the entitlement and fails later at the API with 401/403. Request the full scope set, and remember `firefly_api` and `ff_apis` are both required even though they look redundant.
+If the curl call returns `invalid_client`, the `client_secret` is wrong. If it returns `unauthorized_client`, the workspace is not subscribed to the Firefly Services API (Step 3 was skipped or incomplete). Note that IMS ignores unrecognized scope names rather than rejecting them (verified against the live endpoint), so a misspelled scope still yields a token that *looks* fine but lacks the intended entitlement and fails later at the API with 401/403. Request the full scope set, and remember `firefly_api` and `ff_apis` are both required even though they look redundant.
 
 ## Step 7 — Install the SDK and run the smoke-test call
 
@@ -200,7 +200,7 @@ For Photoshop / Lightroom workflows add the relevant SDKs:
 npm install @adobe/photoshop-apis @adobe/lightroom-apis
 ```
 
-Adobe ships JavaScript SDKs only. There is no first-party Python SDK; Python projects call the REST endpoints with `requests` plus their own typed wrappers.
+As of this writing, Adobe publishes JavaScript SDKs — check developer.adobe.com for current language support. Python projects call the REST endpoints with `requests` plus their own typed wrappers.
 
 Smoke-test the credentials with a minimal generate-image call:
 
@@ -212,9 +212,9 @@ curl -X POST 'https://firefly-api.adobe.io/v3/images/generate' \
   --data-raw '{"prompt":"a single red apple on a white background","numVariations":1,"size":{"width":1024,"height":1024}}'
 ```
 
-A successful response includes an `outputs[0].image.url` field. Open the URL in a browser to confirm the actual image was generated. If you see a presigned URL but the image is blank, that is a transient backend issue — retry once before debugging.
+A successful response includes an `outputs[0].image.url` field. Open the URL in a browser to confirm the actual image was generated. If the presigned URL loads but the image is blank, retry once before debugging further — transient issues occasionally resolve on retry.
 
-If you get a 403 with `Forbidden` and no detail, the most likely cause is that the workspace is subscribed but the credentials have not yet propagated. Adobe IMS takes 1-5 minutes after credential issuance before they fully work end-to-end. Wait 5 minutes and retry before investigating further.
+If you get a 403 with `Forbidden` and no detail, the most likely cause is that the workspace is subscribed but the credentials have not yet propagated. Newly issued credentials can take a few minutes to work end-to-end (observed in practice; not an Adobe-documented SLA). Wait a few minutes and retry before investigating further.
 
 ## Step 8 — Record the bootstrap in the customer's runbook
 
@@ -239,17 +239,17 @@ A bootstrap is complete when **all** of these are true:
 4. The actual generated image renders in a browser
 5. Credentials are stored in the customer's secrets manager — not in any developer's `.env`
 
-If any of these fails, stop and resolve before declaring the engagement live. A half-bootstrapped project is the #1 cause of week-2 escalations.
+If any of these fails, stop and resolve before declaring the engagement live. A half-bootstrapped project is a common cause of week-2 escalations.
 
 ## Troubleshooting & Edge Cases
 
 - **`aio` CLI not installed:** Run `npm install -g @adobe/aio-cli`. Do not install via Homebrew — the Adobe-maintained npm package is the only supported distribution.
 - **Multiple IMS orgs and the wrong one is selected:** Every `aio console *` command accepts `--orgId <id>`. Pass it explicitly when uncertain rather than relying on the default selection.
 - **`workspace api add` returns "product profile required":** The Firefly entitlement is profile-gated. Get the profile name from the customer's org admin and pass `--license-config FireflyAPI=<ProfileName>`.
-- **Token succeeds but API calls fail 401/403:** Check the scope list first. IMS silently drops unrecognized scope names (verified live), so a misspelled scope still yields a token — minus the entitlement. The full scope set is `openid,AdobeID,session,additional_info,read_organizations,firefly_api,ff_apis,firefly_enterprise,creative_sdk` (`firefly_enterprise` and `creative_sdk` cover Custom Models and Photoshop/Lightroom). Yes both `firefly_api` and `ff_apis` — the naming is historical.
+- **Token succeeds but API calls fail 401/403:** Check the scope list first. IMS ignores unrecognized scope names rather than rejecting them (verified against the live endpoint), so a misspelled scope still yields a token — minus the entitlement. The full scope set is `openid,AdobeID,session,additional_info,read_organizations,firefly_api,ff_apis,firefly_enterprise,creative_sdk` (`firefly_enterprise` and `creative_sdk` cover Custom Models and Photoshop/Lightroom). Both `firefly_api` and `ff_apis` are required; they cover different endpoint generations.
 - **Smoke test returns 401 after a successful token call:** The token is valid but does not include the Firefly Services entitlement. Check that the project's IMS org and the credential's owning org match.
-- **First API call returns 403 with no detail:** Wait 5 minutes. IMS credential propagation has a tail of up to ~5 minutes after issuance.
-- **JWT credentials still in use:** Migrate immediately. JWT was end-of-life on June 30, 2025 and certificates expire by March 1, 2026. Mixed credential types are unsupported.
+- **First API call returns 403 with no detail:** Wait a few minutes and retry. Newly issued credentials can take a few minutes to propagate (observed in practice; not an Adobe-documented SLA).
+- **JWT credentials still in use:** Migrate immediately. JWT reached end-of-life on June 30, 2025 and all certificates expired March 1, 2026 — any remaining JWT integration is already non-functional. Mixed credential types are unsupported.
 
 ## Chaining with Other Skills
 

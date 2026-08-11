@@ -19,7 +19,7 @@ Use this skill when:
 - You're scoping a new Firefly Services project and want to know which skills are relevant before reading anything
 - You're navigating the catalog and want a structured overview without reading every SKILL.md
 - You need to find a specific capability (custom models, video, batch processing, brand guardrails, etc.) but don't remember the skill name
-- You're onboarding a new FocusGTS consultant and want a guided reading order
+- You're onboarding a new engineer to Firefly Services and want a guided reading order
 - You're auditing what coverage the catalog has across the Firefly Services surface area
 
 Do **NOT** use this skill when:
@@ -52,9 +52,9 @@ Each track maps a real user intent to an ordered reading list. Pick the one clos
 
 **Read in this order:**
 
-1. [`firefly-services-troubleshoot`](../firefly-services-troubleshoot/SKILL.md) — A triage tree for Firefly Services failures, grounded in the failure modes our consultants hit in productio...
+1. [`firefly-services-troubleshoot`](../firefly-services-troubleshoot/SKILL.md) — A triage tree for Firefly Services failures, grounded in failure modes seen in production enterprise deploy...
 2. [`firefly-services-auth`](../firefly-services-auth/SKILL.md) — Obtains and refreshes IMS access tokens for Firefly Services using OAuth Server-to-Server credentials. Cove...
-3. [`firefly-services-rate-limits`](../firefly-services-rate-limits/SKILL.md) — The production playbook for operating Firefly Services at scale. Default rate limits are intentionally low;...
+3. [`firefly-services-rate-limits`](../firefly-services-rate-limits/SKILL.md) — The production playbook for operating Firefly Services at scale. Default rate limits are conservative and c...
 
 ### Move from single-call usage to high-volume batch generation
 
@@ -64,10 +64,10 @@ Each track maps a real user intent to an ordered reading list. Pick the one clos
 
 **Read in this order:**
 
-1. [`firefly-services-rate-limits`](../firefly-services-rate-limits/SKILL.md) — The production playbook for operating Firefly Services at scale. Default rate limits are intentionally low;...
+1. [`firefly-services-rate-limits`](../firefly-services-rate-limits/SKILL.md) — The production playbook for operating Firefly Services at scale. Default rate limits are conservative and c...
 2. [`firefly-batch-pipeline`](../firefly-batch-pipeline/SKILL.md) — The complete deployable blueprint for production-scale generative campaign workloads. This skill stitches t...
-3. [`firefly-cost-optimization`](../firefly-cost-optimization/SKILL.md) — The FinOps playbook for Firefly Services. Every FDE engagement eventually gets the question: "why is consum...
-4. [`firefly-services-troubleshoot`](../firefly-services-troubleshoot/SKILL.md) — A triage tree for Firefly Services failures, grounded in the failure modes our consultants hit in productio...
+3. [`firefly-cost-optimization`](../firefly-cost-optimization/SKILL.md) — The FinOps playbook for Firefly Services. Production deployments eventually get the question: "why is consu...
+4. [`firefly-services-troubleshoot`](../firefly-services-troubleshoot/SKILL.md) — A triage tree for Firefly Services failures, grounded in failure modes seen in production enterprise deploy...
 
 ### Build a campaign-automation pipeline that combines generative + template-based composition
 
@@ -94,7 +94,7 @@ Each track maps a real user intent to an ordered reading list. Pick the one clos
 1. [`firefly-custom-models`](../firefly-custom-models/SKILL.md) — Use brand-aligned generative models. Custom Models capture distinctive aesthetics, characters, objects, or ...
 2. [`firefly-services-storage-refs`](../firefly-services-storage-refs/SKILL.md) — Pass images into Firefly endpoints and capture results out of them. Almost every generative or editing API ...
 3. [`firefly-brand-guardrails`](../firefly-brand-guardrails/SKILL.md) — The compliance layer for production generative pipelines. Base Firefly is commercially-safe at the model le...
-4. [`firefly-cost-optimization`](../firefly-cost-optimization/SKILL.md) — The FinOps playbook for Firefly Services. Every FDE engagement eventually gets the question: "why is consum...
+4. [`firefly-cost-optimization`](../firefly-cost-optimization/SKILL.md) — The FinOps playbook for Firefly Services. Production deployments eventually get the question: "why is consu...
 
 ### Generate variations of an existing image, then expand or fill regions
 
@@ -116,9 +116,9 @@ Each track maps a real user intent to an ordered reading list. Pick the one clos
 
 **Read in this order:**
 
-1. [`firefly-video-model`](../firefly-video-model/SKILL.md) — The industry's first commercially-safe AI video generation API. Generates 1080p video clips from text promp...
+1. [`firefly-video-model`](../firefly-video-model/SKILL.md) — Adobe positions Firefly Video as the first commercially-safe AI video generation API. It generates 1080p vi...
 2. [`firefly-services-storage-refs`](../firefly-services-storage-refs/SKILL.md) — Pass images into Firefly endpoints and capture results out of them. Almost every generative or editing API ...
-3. [`firefly-services-rate-limits`](../firefly-services-rate-limits/SKILL.md) — The production playbook for operating Firefly Services at scale. Default rate limits are intentionally low;...
+3. [`firefly-services-rate-limits`](../firefly-services-rate-limits/SKILL.md) — The production playbook for operating Firefly Services at scale. Default rate limits are conservative and c...
 
 ### Compose final assets from PSD templates with smart-object replacement
 
@@ -163,8 +163,8 @@ Each track maps a real user intent to an ordered reading list. Pick the one clos
 
 **Read in this order:**
 
-1. [`firefly-cost-optimization`](../firefly-cost-optimization/SKILL.md) — The FinOps playbook for Firefly Services. Every FDE engagement eventually gets the question: "why is consum...
-2. [`firefly-services-rate-limits`](../firefly-services-rate-limits/SKILL.md) — The production playbook for operating Firefly Services at scale. Default rate limits are intentionally low;...
+1. [`firefly-cost-optimization`](../firefly-cost-optimization/SKILL.md) — The FinOps playbook for Firefly Services. Production deployments eventually get the question: "why is consu...
+2. [`firefly-services-rate-limits`](../firefly-services-rate-limits/SKILL.md) — The production playbook for operating Firefly Services at scale. Default rate limits are conservative and c...
 3. [`firefly-batch-pipeline`](../firefly-batch-pipeline/SKILL.md) — The complete deployable blueprint for production-scale generative campaign workloads. This skill stitches t...
 
 ### Build a GenStudio for Performance Marketing extension
@@ -190,7 +190,7 @@ Each track maps a real user intent to an ordered reading list. Pick the one clos
 
 1. [`firefly-services-auth`](../firefly-services-auth/SKILL.md) — Obtains and refreshes IMS access tokens for Firefly Services using OAuth Server-to-Server credentials. Cove...
 2. [`firefly-services-bootstrap`](../firefly-services-bootstrap/SKILL.md) — Gets a brand-new Firefly Services project from zero to a verified first API call in one workflow. Designed ...
-3. [`firefly-services-troubleshoot`](../firefly-services-troubleshoot/SKILL.md) — A triage tree for Firefly Services failures, grounded in the failure modes our consultants hit in productio...
+3. [`firefly-services-troubleshoot`](../firefly-services-troubleshoot/SKILL.md) — A triage tree for Firefly Services failures, grounded in failure modes seen in production enterprise deploy...
 
 ## Full index — grouped by category
 
@@ -255,8 +255,8 @@ Each track maps a real user intent to an ordered reading list. Pick the one clos
 |---|---|
 | [`firefly-batch-pipeline`](../firefly-batch-pipeline/SKILL.md) | The complete deployable blueprint for production-scale generative campaign workloads. This skill stitches together the rate-limit layer (... |
 | [`firefly-brand-guardrails`](../firefly-brand-guardrails/SKILL.md) | The compliance layer for production generative pipelines. Base Firefly is commercially-safe at the model level — IP-safe training data, o... |
-| [`firefly-cost-optimization`](../firefly-cost-optimization/SKILL.md) | The FinOps playbook for Firefly Services. Every FDE engagement eventually gets the question: "why is consumption 3× what we forecast?" Th... |
-| [`firefly-services-rate-limits`](../firefly-services-rate-limits/SKILL.md) | The production playbook for operating Firefly Services at scale. Default rate limits are intentionally low; the architecture below is the... |
+| [`firefly-cost-optimization`](../firefly-cost-optimization/SKILL.md) | The FinOps playbook for Firefly Services. Production deployments eventually get the question: "why is consumption 3× what we forecast?" T... |
+| [`firefly-services-rate-limits`](../firefly-services-rate-limits/SKILL.md) | The production playbook for operating Firefly Services at scale. Default rate limits are conservative and can be raised per-customer on r... |
 
 ### project-initialization
 
@@ -274,13 +274,13 @@ Each track maps a real user intent to an ordered reading list. Pick the one clos
 
 | Skill | Purpose |
 |---|---|
-| [`firefly-services-troubleshoot`](../firefly-services-troubleshoot/SKILL.md) | A triage tree for Firefly Services failures, grounded in the failure modes our consultants hit in production across enterprise FDE engage... |
+| [`firefly-services-troubleshoot`](../firefly-services-troubleshoot/SKILL.md) | A triage tree for Firefly Services failures, grounded in failure modes seen in production enterprise deployments. Each entry includes the... |
 
 ### video
 
 | Skill | Purpose |
 |---|---|
-| [`firefly-video-model`](../firefly-video-model/SKILL.md) | The industry's first commercially-safe AI video generation API. Generates 1080p video clips from text prompts or images. Output is IP-saf... |
+| [`firefly-video-model`](../firefly-video-model/SKILL.md) | Adobe positions Firefly Video as the first commercially-safe AI video generation API. It generates 1080p video clips from text prompts or... |
 
 ## Full index — alphabetical
 
@@ -288,7 +288,7 @@ Each track maps a real user intent to an ordered reading list. Pick the one clos
 |---|---|---|
 | [`firefly-batch-pipeline`](../firefly-batch-pipeline/SKILL.md) | production-architecture | The complete deployable blueprint for production-scale generative campaign workloads. This skill stitches together the rate-limit layer (... |
 | [`firefly-brand-guardrails`](../firefly-brand-guardrails/SKILL.md) | production-architecture | The compliance layer for production generative pipelines. Base Firefly is commercially-safe at the model level — IP-safe training data, o... |
-| [`firefly-cost-optimization`](../firefly-cost-optimization/SKILL.md) | production-architecture | The FinOps playbook for Firefly Services. Every FDE engagement eventually gets the question: "why is consumption 3× what we forecast?" Th... |
+| [`firefly-cost-optimization`](../firefly-cost-optimization/SKILL.md) | production-architecture | The FinOps playbook for Firefly Services. Production deployments eventually get the question: "why is consumption 3× what we forecast?" T... |
 | [`firefly-custom-models`](../firefly-custom-models/SKILL.md) | custom-models | Use brand-aligned generative models. Custom Models capture distinctive aesthetics, characters, objects, or compositional patterns from 10... |
 | [`firefly-expand-fill`](../firefly-expand-fill/SKILL.md) | image-editing | Two related but distinct APIs for modifying existing images. **Expand** grows the canvas and generates new content into the new area. **F... |
 | [`firefly-generate-image-v3-async`](../firefly-generate-image-v3-async/SKILL.md) | generate-image | The production pattern for text-to-image generation with Adobe Firefly's V3 asynchronous API (`/v3/images/generate-async`). V3 async is t... |
@@ -296,10 +296,10 @@ Each track maps a real user intent to an ordered reading list. Pick the one clos
 | [`firefly-project-planner`](../firefly-project-planner/SKILL.md) | meta | The interactive entry point for anyone planning a Firefly Services engagement. If a user knows roughly what they want to build but doesn'... |
 | [`firefly-services-auth`](../firefly-services-auth/SKILL.md) | authentication | Obtains and refreshes IMS access tokens for Firefly Services using OAuth Server-to-Server credentials. Covers the token round-trip, the r... |
 | [`firefly-services-bootstrap`](../firefly-services-bootstrap/SKILL.md) | project-initialization | Gets a brand-new Firefly Services project from zero to a verified first API call in one workflow. Designed for the opening 30 minutes of ... |
-| [`firefly-services-rate-limits`](../firefly-services-rate-limits/SKILL.md) | production-architecture | The production playbook for operating Firefly Services at scale. Default rate limits are intentionally low; the architecture below is the... |
+| [`firefly-services-rate-limits`](../firefly-services-rate-limits/SKILL.md) | production-architecture | The production playbook for operating Firefly Services at scale. Default rate limits are conservative and can be raised per-customer on r... |
 | [`firefly-services-storage-refs`](../firefly-services-storage-refs/SKILL.md) | storage | Pass images into Firefly endpoints and capture results out of them. Almost every generative or editing API requires an image to be **refe... |
-| [`firefly-services-troubleshoot`](../firefly-services-troubleshoot/SKILL.md) | troubleshooting | A triage tree for Firefly Services failures, grounded in the failure modes our consultants hit in production across enterprise FDE engage... |
-| [`firefly-video-model`](../firefly-video-model/SKILL.md) | video | The industry's first commercially-safe AI video generation API. Generates 1080p video clips from text prompts or images. Output is IP-saf... |
+| [`firefly-services-troubleshoot`](../firefly-services-troubleshoot/SKILL.md) | troubleshooting | A triage tree for Firefly Services failures, grounded in failure modes seen in production enterprise deployments. Each entry includes the... |
+| [`firefly-video-model`](../firefly-video-model/SKILL.md) | video | Adobe positions Firefly Video as the first commercially-safe AI video generation API. It generates 1080p video clips from text prompts or... |
 | [`genstudio-extensibility-scaffold`](../genstudio-extensibility-scaffold/SKILL.md) | genstudio | The first-mover blueprint for extending Adobe GenStudio for Performance Marketing. GenStudio ships with a core experience; the App Builde... |
 | [`lightroom-api-batch`](../lightroom-api-batch/SKILL.md) | lightroom-api | The production pattern for applying Lightroom-grade adjustments to images at scale. Apply presets, normalize exposure, auto-tone, color g... |
 | [`photoshop-api-actions`](../photoshop-api-actions/SKILL.md) | photoshop-api | Run Photoshop operations on the server. The Photoshop API exposes the same operation surface that the desktop app uses: action playback, ... |
@@ -328,26 +328,25 @@ The 15 most recently updated skills (by git history) in the last 30 days:
 
 ## External skills (auto-discovered)
 
-> **Indexed for discoverability only, not endorsed by FocusGTS.** External skills are published and maintained by their respective authors. Each skill's quality, correctness, and currency are the responsibility of the publisher listed below. FocusGTS does not redistribute, modify, or warrant any external skill. Listed here so users navigating this catalog can find every known Firefly-related skill, not just ours.
+> **Maintained by their respective publishers; listed for navigation.** External skills are published and maintained by their respective publishers, who are responsible for each skill's quality, correctness, and currency. They are listed here so users navigating this catalog can find every known Firefly-related skill in one place.
 
 ### Adobe Inc. — `adobe/skills`
 
 Adobe's official skill repository. Listed here so the catalog reflects
 Adobe-published Firefly-related skills the moment they ship, without
-manual intervention. Indexed for navigation only — not endorsed by
-FocusGTS and not redistributed.
+manual intervention. Maintained by Adobe; listed for navigation.
 
 | Skill | Category | Last commit | Source |
 |---|---|---|---|
-| [`adobe-batch-edit-photos`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-batch-edit-photos/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-batch-edit-photos/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-batch-edit-photos/SKILL.md) |
-| [`adobe-create-pdfs-from-data`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-pdfs-from-data/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-pdfs-from-data/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-pdfs-from-data/SKILL.md) |
-| [`adobe-create-social-variations`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-social-variations/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-social-variations/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-social-variations/SKILL.md) |
-| [`adobe-design-from-template`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-design-from-template/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-design-from-template/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-design-from-template/SKILL.md) |
-| [`adobe-edit-quick-cut`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-edit-quick-cut/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-edit-quick-cut/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-edit-quick-cut/SKILL.md) |
-| [`adobe-resize-photos-and-videos`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-resize-photos-and-videos/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-resize-photos-and-videos/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-resize-photos-and-videos/SKILL.md) |
-| [`adobe-retouch-portraits`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-retouch-portraits/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-retouch-portraits/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-retouch-portraits/SKILL.md) |
-| [`run-featured-workflow`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/run-workflow/skills/run-featured-workflow/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/run-workflow/skills/run-featured-workflow/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/run-workflow/skills/run-featured-workflow/SKILL.md) |
-| [`run-workflow`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/run-workflow/skills/run-workflow/SKILL.md) | uncategorized | 2026-08-07 | [plugins/creative-cloud/run-workflow/skills/run-workflow/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/run-workflow/skills/run-workflow/SKILL.md) |
+| [`adobe-batch-edit-photos`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-batch-edit-photos/SKILL.md) | uncategorized | 2026-08-11 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-batch-edit-photos/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-batch-edit-photos/SKILL.md) |
+| [`adobe-create-pdfs-from-data`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-pdfs-from-data/SKILL.md) | uncategorized | 2026-08-11 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-pdfs-from-data/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-pdfs-from-data/SKILL.md) |
+| [`adobe-create-social-variations`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-social-variations/SKILL.md) | uncategorized | 2026-08-11 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-social-variations/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-create-social-variations/SKILL.md) |
+| [`adobe-design-from-template`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-design-from-template/SKILL.md) | uncategorized | 2026-08-11 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-design-from-template/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-design-from-template/SKILL.md) |
+| [`adobe-edit-quick-cut`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-edit-quick-cut/SKILL.md) | uncategorized | 2026-08-11 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-edit-quick-cut/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-edit-quick-cut/SKILL.md) |
+| [`adobe-resize-photos-and-videos`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-resize-photos-and-videos/SKILL.md) | uncategorized | 2026-08-11 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-resize-photos-and-videos/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-resize-photos-and-videos/SKILL.md) |
+| [`adobe-retouch-portraits`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-retouch-portraits/SKILL.md) | uncategorized | 2026-08-11 | [plugins/creative-cloud/adobe-for-creativity/skills/adobe-retouch-portraits/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/adobe-for-creativity/skills/adobe-retouch-portraits/SKILL.md) |
+| [`run-featured-workflow`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/run-workflow/skills/run-featured-workflow/SKILL.md) | uncategorized | 2026-08-11 | [plugins/creative-cloud/run-workflow/skills/run-featured-workflow/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/run-workflow/skills/run-featured-workflow/SKILL.md) |
+| [`run-workflow`](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/run-workflow/skills/run-workflow/SKILL.md) | uncategorized | 2026-08-11 | [plugins/creative-cloud/run-workflow/skills/run-workflow/SKILL.md](https://github.com/adobe/skills/blob/main/plugins/creative-cloud/run-workflow/skills/run-workflow/SKILL.md) |
 
 
 ## How this skill is maintained
@@ -356,14 +355,14 @@ This SKILL.md is regenerated by `scripts/catalog/build-catalog.ts`:
 
 - **Trigger**: every push to `main`, plus a daily GitHub Actions cron at 14:00 UTC.
 - **Source**: the YAML frontmatter of every SKILL.md under `plugins/firefly-services/skills/`, the planning-track definitions in `config/planning-tracks.yml`, and the external sources listed in `config/external-sources.yml`.
-- **External scan**: each external source listed in `config/external-sources.yml` is shallow-cloned (or fetched), filtered by relevance keywords, and surfaced in the catalog with a clear "indexed not endorsed" disclaimer.
+- **External scan**: each external source listed in `config/external-sources.yml` is shallow-cloned (or fetched), filtered by relevance keywords, and surfaced in the catalog with a "maintained by their respective publishers; listed for navigation" note.
 - **Validation**: the generator fails CI if any SKILL.md is malformed or if a planning track references an unknown skill.
 
 To add a new track, edit `config/planning-tracks.yml` and push. To add a new skill, drop a new SKILL.md into a new directory under `plugins/firefly-services/skills/`; the catalog will pick it up automatically.
 
 ## Provenance
 
-- Catalog generated: `2026-08-11T01:15:46.140Z`
+- Catalog generated: `2026-08-11T15:35:32.248Z`
 - Total skills indexed: 18 (plus this meta-skill)
 - Source: `scripts/catalog/build-catalog.ts`
 - Planning tracks source: `config/planning-tracks.yml`

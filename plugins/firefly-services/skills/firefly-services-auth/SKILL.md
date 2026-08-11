@@ -26,17 +26,17 @@ Use this skill when:
 
 Do **NOT** use this skill when:
 - A valid `FIREFLY_SERVICES_ACCESS_TOKEN` is already in scope and not near expiry — reuse it
-- The user is doing end-user delegated auth (Firefly Services is server-to-server only; there is no user-delegated path)
+- The user is doing end-user delegated auth (the documented Firefly Services auth model is server-to-server; as of this writing there is no user-delegated path)
 - Credentials do not yet exist — run `firefly-services-bootstrap` first
 
-## Critical: JWT is Dead
+## Critical: JWT Credentials Have Reached End-of-Life
 
 Service Account (JWT) credentials reached **end-of-life on June 30, 2025**. They continued to function only until their issuing certificate expired, and the final certificate expiry was **March 1, 2026**. That date has passed — every JWT-based integration is now non-functional, and there is no path to renew a JWT certificate.
 
 If you see code like this anywhere, it must be migrated:
 
 ```js
-// DEAD CODE — JWT path (do not use)
+// Legacy JWT path — no longer functional (do not use)
 const jwt = require('jsonwebtoken');
 const token = jwt.sign({...}, privateKey, {algorithm: 'RS256'});
 ```
@@ -70,7 +70,7 @@ The scope string in the token request controls what the token can access. Over-s
 
 The SDK-documented per-API minimums are narrower than the baseline: Firefly is `firefly_api, ff_apis`; Photoshop and Lightroom are `openid, AdobeID, read_organizations`. The baseline rows are Adobe's getting-started default and are safe to include.
 
-**Always request both `firefly_api` and `ff_apis`** when uncertain. The naming is historical and the cost of including both is zero. Include `firefly_enterprise` only for projects using Custom Models. For Photoshop/Lightroom workloads, `openid, AdobeID, read_organizations` covers the SDK-documented requirement; `creative_sdk` is a legacy scope that remains harmless to include.
+**Always request both `firefly_api` and `ff_apis`** when uncertain — the two scopes cover different endpoint generations, and the cost of including both is zero. Include `firefly_enterprise` only for projects using Custom Models. For Photoshop/Lightroom workloads, `openid, AdobeID, read_organizations` covers the SDK-documented requirement; `creative_sdk` is a legacy scope that remains harmless to include.
 
 The canonical scope string for an FDE engagement that uses Firefly + Photoshop + custom models:
 
@@ -199,14 +199,13 @@ If a project still carries JWT credentials, it is already broken — the final c
 
 ### Step A — Provision OAuth S2S credentials in the same workspace
 
+Credential creation is a Developer Console UI step — the `aio console` plugin manages projects, workspaces, and API subscriptions, but has no credential-creation command. Deep-link straight to the existing project/workspace:
+
 ```bash
-aio console workspace credentials create \
-  --projectName <existing-project> \
-  --workspaceName <existing-workspace> \
-  --type oauth_server_to_server \
-  --name <name>-oauth \
-  --json
+aio console open
 ```
+
+In the Console UI, open the workspace that holds the JWT credential and add a new credential: **Credentials → Add Credential** (or **Add API** if prompted for a credential type), then choose **OAuth Server-to-Server** and name it `<name>-oauth`. The credential screen presents the `client_id` and `client_secret` — capture both immediately (the secret is not retrievable later, only rotatable) and store them in the secrets manager.
 
 The expired JWT credential can coexist in the same workspace while you stand up OAuth — it no longer functions, so there is no traffic to cut over. Revoke it once the OAuth path is verified (Step C).
 
@@ -227,7 +226,7 @@ After the OAuth path is verified in production, revoke the JWT credentials in De
 - **Token valid but Firefly API returns 403:** The token has the scope but the IMS org does not have the entitlement. Customer needs Adobe to provision Firefly Services for that org.
 - **Token works locally but fails in production:** Different `client_id`/`client_secret`. Multi-environment deployments need per-environment credentials — never share a credential between Stage and Prod.
 - **Token works but in-flight requests sporadically 401:** Refresh-on-expiry race. Increase the safety buffer (5 → 15 minutes) and make the refresh function idempotent (only one refresh in-flight per cache instance at a time).
-- **JWT certificate expired:** The project is dead until rebuilt on OAuth. There is no path to renew the JWT certificate.
+- **JWT certificate expired:** The integration is non-functional until rebuilt on OAuth. There is no path to renew the JWT certificate.
 
 ## Validate
 

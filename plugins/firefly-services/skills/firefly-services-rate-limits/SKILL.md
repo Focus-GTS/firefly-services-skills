@@ -1,6 +1,6 @@
 ---
 name: firefly-services-rate-limits
-description: Production rate-limit strategy for Adobe Firefly Services — default 4 RPM per credential, requesting increases, exponential backoff with jitter, token-bucket clients, SQS-fronted queueing for batch workloads, dead-letter queue handling, and per-endpoint quota planning. Use whenever the user mentions "429", "rate limited", "Too Many Requests", "Firefly is slow", "batch processing", "queueing", "high volume", "campaign at scale", or designs a system that will exceed 4 RPM. Encodes the production pattern that takes a generative pipeline from blocked at the default RPM ceiling to enterprise-scale campaign throughput.
+description: Production rate-limit strategy for Adobe Firefly Services — the commonly cited default of 4 RPM per credential (limits are org- and contract-specific — verify for your org), requesting increases, exponential backoff with jitter, token-bucket clients, SQS-fronted queueing for batch workloads, dead-letter queue handling, and per-endpoint quota planning. Use whenever the user mentions "429", "rate limited", "Too Many Requests", "Firefly is slow", "batch processing", "queueing", "high volume", "campaign at scale", or designs a system that will exceed 4 RPM. Encodes the production pattern that takes a generative pipeline from blocked at the default RPM ceiling to enterprise-scale campaign throughput.
 license: Apache-2.0
 compatibility: Applies to all Firefly Services endpoints (`firefly-api.adobe.io`, `image.adobe.io` for Photoshop and Lightroom). Queue patterns shown for AWS (SQS + Lambda) and equivalent on GCP (Pub/Sub + Cloud Functions) or Azure (Service Bus + Functions).
 allowed-tools: Bash(curl:*) Read Write Edit
@@ -11,7 +11,7 @@ metadata:
 
 # Firefly Services Rate Limits
 
-The production playbook for operating Firefly Services at scale. Default rate limits are intentionally low; the architecture below is the pattern used in production for any FDE engagement that exceeds a single-user workload — it scales a pipeline from blocked at the default ceiling to enterprise-grade campaign throughput.
+The production playbook for operating Firefly Services at scale. Default rate limits are conservative and can be raised per-customer on request; the architecture below is the pattern used in production for any deployment that exceeds a single-user workload — it scales a pipeline from blocked at the default ceiling to enterprise-grade campaign throughput.
 
 ## When to Use This Skill
 
@@ -28,7 +28,7 @@ Do **NOT** use this skill when:
 
 ## Default Rate Limits — Know the Numbers
 
-Firefly Services rate limits are per-credential, per-endpoint, with both per-second and per-minute components. Defaults at the time of writing:
+Firefly Services rate limits are per-credential, per-endpoint, with both per-second and per-minute components. Documented defaults at the time of writing — actual provisioned limits are org- and contract-dependent, so verify for your org:
 
 | Endpoint family | Default per credential | Notes |
 |---|---|---|
@@ -39,7 +39,7 @@ Firefly Services rate limits are per-credential, per-endpoint, with both per-sec
 | Custom Model training | 1 concurrent job per org | Throughput is training-time bound, not RPM |
 | Photoshop API | ~10 RPM | Higher than Firefly |
 | Lightroom API | ~10 RPM | Higher than Firefly |
-| Token endpoint (IMS) | Effectively unlimited | Cache aggressively anyway |
+| Token endpoint (IMS) | Not publicly documented — high in practice | Cache tokens aggressively; a token cache that re-auths on every call is a real failure mode (see `firefly-services-auth`) |
 
 Numbers shift over time and can be raised per-customer via Adobe account management. Verify current limits in the [Technical Usage Notes](https://developer.adobe.com/firefly-services/docs/firefly-api/guides/concepts/usage-notes/). Adobe officially documents only the `429` status with a `Retry-After` header for rate limiting; informational headers such as `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` may be present on some responses but are not reliably documented — do not depend on them. (Live check 2026-08-10 on a sandbox credential: an 8-call generate burst completed with zero 429s and no rate-limit headers on any response — enforcement is org-specific and invisible until it triggers, so treat documented defaults as planning numbers and build 429-reactive backoff rather than header-driven throttling.)
 
@@ -59,7 +59,7 @@ Firefly Services
 Result persistence + customer notification (webhook or polling)
 ```
 
-Each layer exists for a specific reason — skipping any one of them is the #1 cause of weekend pager incidents.
+Each layer exists for a specific reason — skipping a layer is the most common cause of production pager incidents in these pipelines.
 
 ## Step 1 — Request a Rate-Limit Increase
 
@@ -68,10 +68,10 @@ This is a non-technical step but it is the first one. Adobe will raise rate limi
 | Action | Who |
 |---|---|
 | Open a support ticket with the customer's Adobe Enterprise account team | Customer's procurement / account owner |
-| Provide projected volume: peak RPM, daily call count, business justification | FDE consultant |
+| Provide projected volume: peak RPM, daily call count, business justification | Integration engineering team |
 | Adobe responds with a proposed limit; agree and implement | Adobe + Customer |
 
-Typical raises: 4 RPM → 60 RPM is common for committed enterprise customers. Higher with specific justification. The lead time is usually 1-2 weeks.
+Adobe raises limits per-customer through the enterprise account team. Provide the projected peak RPM and a clear business justification; the granted limit and the turnaround time are org- and contract-dependent, so budget the lead time into the project plan.
 
 Even with a raised limit, build the architecture below — the limit exists, just at a higher number.
 
@@ -195,11 +195,11 @@ Equivalent patterns on GCP: Pub/Sub + Cloud Functions, with Cloud Run for the wo
 
 | Use case | Estimated daily volume | Peak burst | Provisioned RPM | Architecture |
 |---|---|---|---|---|
-| Key art generation | low thousands of calls/day | hundreds in a 5-minute window | raised limit (negotiated per customer) | SQS + Lambda worker, concurrency 1 |
-| Title compositing | low thousands of calls/day | hundreds in a 5-minute window | shares with above | Same queue, different topic |
-| Campaign full-run | tens of thousands of calls across several hours | hundreds-to-thousands per hour | raised limit | Same architecture, multi-worker, runs over hours not seconds |
+| Hero-asset generation | low thousands of calls/day | hundreds in a 5-minute window | raised limit (negotiated per customer) | SQS + Lambda worker, concurrency 1 |
+| Template-driven compositing | low thousands of calls/day | hundreds in a 5-minute window | shares with above | Same queue, different topic |
+| Full campaign batch | tens of thousands of calls across several hours | hundreds-to-thousands per hour | raised limit | Same architecture, multi-worker, runs over hours not seconds |
 
-The peak campaign-run number (tens of thousands of calls in a single run) is the visible proof point that proves the system works at customer-presented scale. Hitting it takes months of architectural maturation; this skill is the shape that gets there.
+This architecture has been validated for high-volume template-driven campaign asset production at the scale of tens of thousands of calls in a single campaign run.
 
 ## Step 5 — Dead-Letter Queue Handling
 
@@ -254,7 +254,7 @@ Rate-limit architecture is production-ready when:
 - **429s coming from a single credential while others are fine:** Per-credential limit. Either request a raise for that credential or split the workload across more credentials.
 - **`Retry-After` header missing on 429:** Some legacy endpoints don't return it. Fall back to exponential backoff with cap.
 - **Custom-model jobs queue but never run:** Custom-model training is concurrency 1 per org. Other jobs queue behind it; this is by design.
-- **Photoshop / Lightroom calls failing at 10 RPM but Firefly is fine:** They have separate quotas. Treat as separate limiters.
+- **Photoshop / Lightroom calls hitting 429s while Firefly calls are fine:** They have separate quotas. Treat as separate limiters.
 - **Burst at start of day, then steady:** Cold cache. Pre-warm the token cache during deploy / startup.
 
 ## Chaining with Other Skills

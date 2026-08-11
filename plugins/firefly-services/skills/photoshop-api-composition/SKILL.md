@@ -1,6 +1,6 @@
 ---
 name: photoshop-api-composition
-description: Build complex multi-layer compositions with the Adobe Photoshop API — the multi-stage orchestration pattern (a typical state machine has 15-20 functions), layer ordering and blending, multi-template assembly, output rendering at multiple aspect ratios from one composition, and the integration pattern that feeds Firefly-generated content into a PSD pipeline. Use whenever the user needs more than simple smart-object replacement — combining Firefly outputs with template PSDs, chaining multiple Photoshop operations, building campaign assemblers, or orchestrating end-to-end pipelines that produce final renderable assets. Encodes the production state-machine pattern used in enterprise generative campaign pipelines.
+description: Build complex multi-layer compositions with the Adobe Photoshop API — the multi-stage orchestration pattern (a typical state machine has 10-20 single-responsibility functions), layer ordering and blending, multi-template assembly, output rendering at multiple aspect ratios from one composition, and the integration pattern that feeds Firefly-generated content into a PSD pipeline. Use whenever the user needs more than simple smart-object replacement — combining Firefly outputs with template PSDs, chaining multiple Photoshop operations, building campaign assemblers, or orchestrating end-to-end pipelines that produce final renderable assets. Encodes the production state-machine pattern used in enterprise generative campaign pipelines.
 license: Apache-2.0
 compatibility: Requires `creative_sdk` scope and Photoshop API entitlement. Multi-stage compositions typically run on AWS Step Functions / GCP Cloud Workflows / Azure Durable Functions. Stateful job graph required.
 allowed-tools: Bash(curl:*) Bash(jq:*) Read Write Edit
@@ -13,7 +13,7 @@ metadata:
 
 The orchestration pattern for production-grade campaign assembly. When the asset pipeline involves Firefly-generated content + template PSDs + multiple stages of editing + multiple output aspect ratios, you need a stateful workflow engine that coordinates many Photoshop API + Firefly calls in the right order.
 
-This is the architectural pattern that scales a generative pipeline from one hand-built key-art to enterprise-grade campaign runs (tens of thousands of API calls).
+This is the architectural pattern that scales a generative pipeline from a single hand-assembled asset to high-volume template-driven campaign runs.
 
 ## When to Use This Skill
 
@@ -28,9 +28,9 @@ Do **NOT** use this skill when:
 - Single-step smart-object replacement is enough — use `photoshop-api-actions` directly
 - The pipeline is purely Firefly generation without any compositing — use `firefly-generate-image-v3-async` + `firefly-services-rate-limits`
 
-## The 15-20 Function State Machine
+## The 10-20 Function State Machine
 
-A production key-art and title-compositing pipeline runs as a state machine. Each function does one thing and one thing only — composable, independently retryable, observable.
+A production template-driven compositing pipeline runs as a state machine — typically 10-20 single-responsibility functions. Each function does one thing and one thing only — composable, independently retryable, observable.
 
 ```
 START
@@ -49,7 +49,7 @@ START
   │
   ├── composite-psd                     (Photoshop API: smart-object replacement)
   ├── apply-brand-action                (Photoshop API: actions/play .atn)
-  ├── overlay-title-text                (Photoshop API: text-layer replacement)
+  ├── overlay-text-layer                (Photoshop API: text-layer replacement)
   ├── poll-psd-job                      (async)
   ├── download-rendered-output          (jpeg/png)
   │
@@ -84,7 +84,7 @@ This composes into a state machine. AWS Step Functions, GCP Workflows, or Azure 
 | Azure | Durable Functions | Equivalent, function-fused |
 | Self-host | Temporal | Multi-cloud, more flexible, more ops burden |
 
-For a typical 15-20 function pipeline, **AWS Step Functions (Standard)** is the right default. Express tier is for high-volume short jobs (think tens of thousands per day, sub-5-minute total duration) — not the typical asset pipeline.
+For a typical 10-20 function pipeline, **AWS Step Functions (Standard)** is the right default. Express tier is for high-volume short jobs (think tens of thousands per day, sub-5-minute total duration) — not the typical asset pipeline.
 
 ## Step 2 — Function Boundaries
 
@@ -106,7 +106,7 @@ Simplified excerpt from a production state machine:
 
 ```json
 {
-  "Comment": "Key-art assembly pipeline",
+  "Comment": "Campaign asset assembly pipeline",
   "StartAt": "ValidateRequest",
   "States": {
     "ValidateRequest": {
@@ -238,7 +238,7 @@ A single composition typically needs to render at multiple aspect ratios. The St
 
 ## Step 6 — Observability
 
-For a 15-20 function pipeline, structured logging is non-negotiable. Every function should emit:
+For a 10-20 function pipeline, structured logging is non-negotiable. Every function should emit:
 
 | Field | Source |
 |---|---|

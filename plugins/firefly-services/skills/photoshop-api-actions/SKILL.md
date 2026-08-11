@@ -1,8 +1,9 @@
 ---
 name: photoshop-api-actions
-description: Apply Photoshop actions, smart-object replacement, and document operations programmatically using the Adobe Photoshop API — running .atn action files, smart-object source replacement, text replacement, layer visibility toggles, and the input/output storage pattern. Use whenever the user mentions "Photoshop API", "smart object replacement", "smart-object", "apply action", "action runner", "image.adobe.io", ".atn file", "PSD automation", "layer replacement", "text layer update", or wants to drive Photoshop operations from a server without the desktop app. Encodes the production pattern for replacing smart-object content in key-art PSDs at enterprise scale.
+description: Apply Photoshop actions, smart-object replacement, and document operations programmatically using the Adobe Photoshop API — running .atn action files, smart-object source replacement, text replacement, layer visibility toggles, and the input/output storage pattern. Use whenever the user mentions "Photoshop API", "smart object replacement", "smart-object", "apply action", "action runner", "image.adobe.io", ".atn file", "PSD automation", "layer replacement", "text layer update", or wants to drive Photoshop operations from a server without the desktop app. Encodes the production pattern for replacing smart-object content in template PSDs for high-volume campaign asset production.
 license: Apache-2.0
-compatibility: Requires `creative_sdk` scope. Endpoint base: `image.adobe.io/pie/psdService/*`. Source PSDs and assets pass through storage refs (input + output destinations). Most operations are async with job polling.
+compatibility: >-
+  Requires `creative_sdk` scope. Endpoint base: `image.adobe.io/pie/psdService/*`. Source PSDs and assets pass through storage refs (input + output destinations). Most operations are async with job polling.
 allowed-tools: Bash(curl:*) Bash(jq:*) Read Write Edit
 metadata:
   version: "1.0.0"
@@ -138,11 +139,7 @@ curl --silent -X POST 'https://image.adobe.io/pie/psdService/text' \
       "layers": [{
         "name": "headline",
         "text": {
-          "content": "Limited Edition",
-          "characterStyles": [{
-            "fontColor": {"rgb": {"red": 32768, "green": 32768, "blue": 32768}},
-            "fontSize": 48
-          }]
+          "content": "Limited Edition"
         }
       }]
     },
@@ -150,18 +147,13 @@ curl --silent -X POST 'https://image.adobe.io/pie/psdService/text' \
   }'
 ```
 
-Text replacement preserves the original layer's font, position, and tracking unless explicitly overridden. Override only what you need to.
+Content replacement is the proven operation — live-verified 2026-08-11: setting `options.layers[].text.content` succeeded, and the rendered text keeps the font, size, color, position, and tracking defined in the template PSD.
 
-### Supported character styles
+### Character styling is template-level, not request-level
 
-| Field | Notes |
-|---|---|
-| `fontSize` | Point size |
-| `fontColor` | Color object — provide `rgb` (`red`/`green`/`blue`, integers 0–32768), or `cmyk`/`gray`/`lab` |
-| `from` / `to` | Character index range the style applies to |
-| `orientation` | Text orientation (`horizontal` / `vertical`) |
+Character-level styling via `characterStyles` is rejected by the current submission schema — live-verified 2026-08-11: both `fontName` and `fontSize` were rejected at submission with `Additional property fontName is not allowed` and `Additional property fontSize is not allowed`. Do not send `characterStyles` properties in the request.
 
-**Changing the font by name is not supported on the current schema** — live-verified 2026-08-10: `characterStyles[].fontName` is rejected at submission with `Additional property fontName is not allowed`. The layer keeps the font defined in the PSD; text replacement changes content and the styles listed above. If a different font is required, set it in the template PSD itself.
+The practical pattern: define all character styling (font, size, color, orientation) in the template PSD itself, and use the API for content replacement only. If a variant needs different styling, create a styled variant of the template.
 
 Font *availability* is a document-level concern: `options.manageMissingFonts` governs what happens when the PSD references a font the service doesn't have (`useDefault` substitutes ArialMT; `"fail"` fails the job), and `options.fonts` supplies custom font files as storage refs. Keep template fonts on the [supported list](https://github.com/AdobeDocs/photoshop-api-docs/blob/main/SupportedFonts.md) to avoid substitution surprises.
 
@@ -197,7 +189,7 @@ Action files are produced in the desktop Photoshop app:
 3. Stop recording
 4. Export the action set as `.atn`
 
-These are typically built by the customer's creative team and handed to the FDE engineer as part of the asset library. Treat them as versioned assets.
+These are typically built by the customer's creative team and handed to the integration engineer as part of the asset library. Treat them as versioned assets.
 
 ## Step 4 — Layer Visibility and Position
 
@@ -270,8 +262,8 @@ Templates are versioned by customer + use case + variant:
 ```
 templates/
   customer-a/
-    key-art-banner-1920x1080.psd       v3
-    title-card-1080x1080.psd           v2
+    hero-banner-1920x1080.psd          v3
+    square-card-1080x1080.psd          v2
   customer-b/
     campaign-template-16x9.psd         v1
     campaign-template-1x1.psd          v1
@@ -290,7 +282,7 @@ Before submitting a smart-object replacement, fetch the manifest and verify:
 | Text layers are flagged as text | Same |
 | Required system fonts are supported | See SupportedFonts.md |
 
-This pre-flight catches 90% of failures before the API call, where they would otherwise surface mid-pipeline.
+This pre-flight catches most failures before the API call, where they would otherwise surface mid-pipeline.
 
 ## Validate
 

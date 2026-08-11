@@ -1,8 +1,9 @@
 ---
 name: firefly-video-model
-description: Generate video clips with Adobe Firefly Video Model — text-to-video and image-to-video, prompt patterns optimized for motion vs. coherence, duration and aspect ratio control, IP-safe commercial use posture, and the production workflow for inserting Firefly video into existing edit pipelines. Use whenever the user mentions "Firefly Video", "generate video", "text-to-video", "image-to-video", "motion graphics", "video clip", "video model", or wants to add Firefly-generated motion to a campaign or content workflow. The first commercially-safe AI video generation API; encodes the prompt engineering and integration patterns for production motion-graphics workflows.
+description: Generate video clips with Adobe Firefly Video Model — text-to-video and image-to-video, prompt patterns optimized for motion vs. coherence, duration and aspect ratio control, IP-safe commercial use posture, and the production workflow for inserting Firefly video into existing edit pipelines. Use whenever the user mentions "Firefly Video", "generate video", "text-to-video", "image-to-video", "motion graphics", "video clip", "video model", or wants to add Firefly-generated motion to a campaign or content workflow. Positioned by Adobe as the first commercially-safe AI video generation API; encodes the prompt engineering and integration patterns for production motion-graphics workflows.
 license: Apache-2.0
-compatibility: Requires `ff_apis` scope and Firefly Video entitlement (often a separate SKU from base Firefly Services). Endpoint: `firefly-api.adobe.io/v3/videos/generate`. Output is video file (typically MP4, 1080p). Generation typically takes 1-3 minutes per clip, occasionally longer under load.
+compatibility: >-
+  Requires `ff_apis` scope and Firefly Video entitlement (often a separate SKU from base Firefly Services). Endpoint: `firefly-api.adobe.io/v3/videos/generate`. Output is video file (typically MP4, 1080p). Generation typically takes 1-3 minutes per clip, occasionally longer under load.
 allowed-tools: Bash(curl:*) Bash(jq:*) Read Write Edit
 metadata:
   version: "1.0.0"
@@ -11,9 +12,9 @@ metadata:
 
 # Firefly Video Model
 
-The industry's first commercially-safe AI video generation API. Generates 1080p video clips from text prompts or images. Output is IP-safe for commercial use — trained exclusively on licensed content, the same trust posture as Firefly's image models.
+Adobe positions Firefly Video as the first commercially-safe AI video generation API. It generates 1080p video clips from text prompts or images. Output is designed to be commercially safe — trained on licensed and public-domain content, the same trust posture as Firefly's image models.
 
-This is a newer endpoint than image generation; rate limits are lower, generation takes longer, and prompt patterns differ. This skill encodes what we've learned in early production deployments.
+This is a newer endpoint than image generation; rate limits are lower, generation takes longer, and prompt patterns differ. This skill encodes patterns from early production deployments.
 
 ## When to Use This Skill
 
@@ -25,7 +26,7 @@ Use this skill when:
 
 Do **NOT** use this skill when:
 - The user wants long-form video editing — Firefly Video generates clips (typically 5-10s), not full edits
-- IP safety isn't a requirement and another model (Runway, Sora) is acceptable to the customer
+- IP safety isn't a requirement and another video generation model is acceptable to the customer
 - The user wants live-action footage of real people — Firefly Video generates synthetic content
 
 ## What Firefly Video Can and Can't Do
@@ -42,7 +43,7 @@ Do **NOT** use this skill when:
 - Generate complex multi-shot sequences
 - Lip-sync to provided audio
 - Generate clips with recognizable real people
-- Match a specific brand custom-trained style (no video custom models yet)
+- Match a specific brand custom-trained style (no video custom models as of this writing)
 
 If the use case needs long-form, multi-shot, or character lip-sync, plan to use Firefly Video for B-roll / inserts only, with the rest of the edit assembled in Premiere or After Effects.
 
@@ -94,7 +95,7 @@ Send the `x-model-version: video1_standard` header with the request to select th
 | `prompt` | The most-important field; see prompt patterns below |
 | `negativePrompt` | Optional — characteristics the model should steer away from (e.g. "NO people, NO trees") |
 | `sizes` | **Array** of `{width, height}`. Safe validated set: 1920×1080 (16:9), 1080×1920 (9:16), 960×960 (1:1), 1280×720 (16:9), 720×1280 (9:16). The API accepts sizes beyond this list at submission (a 1080×1080 job was submitted and completed successfully in a live check, 2026-08-10) — treat the list as the tested set, not a hard API limit |
-| `seeds` | Array; currently 1 seed supported. Same seed = same output, useful for reproducibility |
+| `seeds` | Array; currently 1 seed supported. Seeds bias toward a consistent composition across runs but do not guarantee byte-identical output — archive delivered files when reproducibility matters for audit |
 | `bitRateFactor` | Optional int 0-63, default 18. Encoding constant rate factor: 0 = lossless/largest file, 63 = smallest file/lowest quality. Suggested range 17-23 — your lever for the file-size planning below |
 | `image` | Optional — `{"conditions": [...]}`, an array of keyframes. Each condition **requires** both `source` (`uploadId`, `url`, or `creativeCloudFileId`) and `placement` (`{"position": 0}` = first frame, `{"position": 1}` = last frame) |
 | `videoSettings` | Optional — typed camera motion, shot angle, shot size, and prompt-style controls (enums below) |
@@ -217,7 +218,7 @@ This pattern avoids the "is the moving version actually approvable" risk — the
 
 ```
 For each storyboard frame:
-  1. Generate or upload a sketch/key-art for the frame
+  1. Generate or upload a sketch or hero still for the frame
   2. Image-to-video with simple motion ("subtle zoom" / "slow pan")
   3. Concat clips in After Effects or ffmpeg
 ```
@@ -246,15 +247,15 @@ Video generation is more expensive than image generation in compute time and quo
 | Metric | Approximate |
 |---|---|
 | Time per clip | 1-3 minutes typically, occasionally longer under load |
-| RPM limit | Lower than image (~1 RPM default) |
+| RPM limit | Lower than image endpoints — documented defaults are org-specific (verify for your org) |
 | Cost per credit | Higher than image (consult Adobe pricing) |
-| Concurrent jobs | 1-2 per credential default |
+| Concurrent jobs | Low per-credential default (verify for your org) |
 
 Plan video workloads with longer polling intervals (5-15s), wider rate-limit headroom, and async webhooks if available. Treat each video job as a multi-minute commitment, not a request-response.
 
 ## IP Safety — The Differentiator
 
-Firefly Video is the **first commercially-safe AI video generation API**. It is trained exclusively on:
+Firefly Video is **designed to be commercially safe**. Adobe states it is trained on:
 
 - Licensed Adobe Stock content
 - Public-domain content
@@ -276,11 +277,11 @@ A Firefly Video pipeline is production-ready when:
 ## Troubleshooting & Edge Cases
 
 - **Output has incoherent or "morphing" subjects:** Prompt is too complex. Simplify to one subject + one motion.
-- **Output is shorter than expected:** Adobe may clip if temporal coherence is breaking down. Reduce motion complexity.
+- **Output is shorter than expected:** clips can come back shorter than requested when temporal coherence degrades. Reduce motion complexity.
 - **Job stuck for 10+ minutes:** Cancel and resubmit. Typical jobs finish in 1-3 minutes; long stalls are rare but happen during peak load.
 - **`sizes` rejected:** `sizes` must be an **array** of `{width, height}` objects — the most common rejection is passing a single object instead of an array. Stick to the tested set (1920×1080, 1080×1920, 960×960, 1280×720, 720×1280) for predictable results; the API has accepted and completed other dimensions in live checks (e.g. 1080×1080), so an unusual size is not automatically the cause of a rejection.
 - **Request runs against the wrong model:** Ensure the `x-model-version: video1_standard` header is present on the submission.
-- **Content safety filter triggers on a clean prompt:** Synthetic video has stricter safety filters than image. Strip any reference to people, brands, or sensitive themes and try again.
+- **Content safety filter triggers on a clean prompt:** In practice, video prompts appear to trigger safety filters more readily than equivalent image prompts. Strip any reference to people, brands, or sensitive themes and try again.
 - **Image-to-video output ignores the source:** Source image may not match the target aspect ratio. Pre-process to the exact target size.
 
 ## Chaining with Other Skills
